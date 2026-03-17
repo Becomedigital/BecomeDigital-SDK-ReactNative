@@ -1,0 +1,153 @@
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+// Required for Compose with Kotlin 2.x (Become Digital SDK requirement)
+apply plugin: "org.jetbrains.kotlin.plugin.compose"
+apply plugin: "com.facebook.react"
+
+repositories {
+    maven { url 'https://maven.microblink.com' }
+    maven { url 'https://jitpack.io' }
+    maven { url "$rootDir/../node_modules/@react-native-async-storage/async-storage/android/local_repo" }
+}/**
+ * This is the configuration block to customize your React Native Android app.
+ * By default you don't need to apply any configuration, just uncomment the lines you need.
+ */
+react {
+    autolinkLibrariesWithApp()
+}
+
+def enableProguardInReleaseBuilds = false
+
+def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+
+android {
+    ndkVersion rootProject.ext.ndkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
+
+    namespace "com.becomedigitalapp"
+
+    defaultConfig {
+        applicationId "com.becomedigitalapp"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+
+        // Required: core library desugaring for Become Digital SDK
+        multiDexEnabled true
+    }
+
+    compileOptions {
+        // Java 17 — must match the JBR JDK configured in gradle.properties
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+        // Required: Enable desugaring for coreLibraryDesugaringEnabled
+        coreLibraryDesugaringEnabled true
+    }
+
+    kotlinOptions {
+        // Must match compileOptions above (JBR is Java 17)
+        jvmTarget = "17"
+    }
+
+    buildFeatures {
+        // Required: Compose support (mandatory for Amplify Liveness in Become SDK)
+        compose true
+        // Required: viewBinding
+        viewBinding true
+        // Required: BuildConfig generation
+        buildConfig true
+    }
+
+    signingConfigs {
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+        release {
+            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+                storeFile file(MYAPP_UPLOAD_STORE_FILE)
+                storePassword MYAPP_UPLOAD_STORE_PASSWORD
+                keyAlias MYAPP_UPLOAD_KEY_ALIAS
+                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            matchingFallbacks = ['release', 'debug']
+        }
+    }
+}
+
+dependencies {
+    // ===== React Native Core =====
+    implementation("com.facebook.react:react-android")
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation jscFlavor
+    }
+
+    // ===== Become Digital SDK (local AAR) =====
+    // Place becomedigitalsdk.aar inside android/app/libs/
+    implementation fileTree(dir: "libs", include: ["*.aar"])
+
+    // ===== Required: Java 8+ desugaring =====
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.5"
+
+    // ===== UI / AndroidX base =====
+    implementation "androidx.appcompat:appcompat:1.6.1"
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+    implementation "androidx.core:core-ktx:1.15.0"
+    implementation "androidx.fragment:fragment-ktx:1.6.2"
+    implementation "androidx.activity:activity-ktx:1.8.2"
+
+    // ===== CameraX =====
+    implementation "androidx.camera:camera-core:1.5.3"
+    implementation "androidx.camera:camera-camera2:1.5.3"
+    implementation "androidx.camera:camera-view:1.5.3"
+    implementation "androidx.camera:camera-lifecycle:1.5.3"
+
+    // ===== Navigation =====
+    implementation "androidx.navigation:navigation-fragment:2.5.3"
+    implementation "androidx.navigation:navigation-ui:2.5.3"
+
+    // ===== JSON / HTTP / Images =====
+    implementation "com.google.code.gson:gson:2.10.1"
+    implementation "com.squareup.okhttp3:okhttp:4.9.3"
+    implementation "com.github.bumptech.glide:glide:4.10.0"
+
+    // ===== Liveness (Amplify UI) + Compose (required by Become SDK) =====
+    implementation "com.amplifyframework.ui:liveness:1.10.0"
+    implementation "com.amplifyframework:aws-auth-cognito:2.33.0"
+    implementation "androidx.compose.material3:material3:1.4.0"
+    implementation "androidx.activity:activity-compose:1.12.4"
+
+    // ===== OCR / Capture (Microblink) =====
+    implementation "com.microblink:capture-core:1.4.2"
+    implementation "com.microblink:capture-ux:1.4.2"
+
+    // ===== Additional SDK Dependencies =====
+    implementation "com.android.volley:volley:1.2.1"
+    def room_version = "1.1.0"
+    implementation "android.arch.persistence.room:runtime:$room_version"
+    annotationProcessor "android.arch.persistence.room:compiler:$room_version"
+    implementation "android.arch.lifecycle:livedata:1.1.1"
+    implementation "android.arch.lifecycle:viewmodel:1.1.1"
+
+    // ===== Tests =====
+    testImplementation "junit:junit:4.13.2"
+    androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
+    androidTestImplementation "androidx.test.uiautomator:uiautomator:2.3.0"
+}

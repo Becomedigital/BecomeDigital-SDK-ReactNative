@@ -1,0 +1,4 @@
+framework module BDIdentityVerification {
+  header "BDIdentityVerification-Swift.h"
+  requires objc
+}
