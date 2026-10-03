@@ -6,7 +6,6 @@ import {
   KeyboardAvoidingView,
   PermissionsAndroid,
   Platform,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -18,6 +17,7 @@ import {
   KeyboardTypeOptions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import BecomeModule, {
   BecomeSDKParams,
   BecomeSDKResult,
@@ -148,7 +148,7 @@ const BecomeSDKScreen = () => {
       await AsyncStorage.setItem('testing_clientSecret', clientSecret.trim());
       await AsyncStorage.setItem('testing_contractId', contractId.trim());
       Alert.alert('Éxito', 'Conexión de Testing guardada correctamente.');
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'No se pudo guardar la conexión.');
     }
   };
@@ -317,8 +317,6 @@ interface ResultPanelProps {
 const ResultPanel = ({result, onReset}: ResultPanelProps) => {
   const isSuccess   = result.status === 'success';
   const isError     = result.status === 'error';
-  const isCancelled = result.status === 'cancelled';
-
   const config = {
     success: {
       icon: '✅',
