@@ -5,6 +5,8 @@ export interface BecomeSDKParams {
   clientSecret: string;
   contractId: string;
   userId: string;
+  /** Blocks screenshots and screen recording while the native SDK is visible. Defaults to true. */
+  preventScreenCapture?: boolean;
 }
 
 export interface BecomeSDKResult {

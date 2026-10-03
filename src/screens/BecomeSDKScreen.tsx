@@ -108,6 +108,8 @@ const BecomeSDKScreen = () => {
       clientSecret: clientSecret.trim(),
       contractId: contractId.trim(),
       userId: generatedUserId,
+      // The native demo apps allow screen capture to simplify manual QA.
+      preventScreenCapture: false,
     };
 
     console.log('[BecomeSDK] ▶ Iniciando verificación...');
