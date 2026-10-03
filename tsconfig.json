@@ -7,5 +7,12 @@
     "strict": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods"]
+  "exclude": [
+    "**/node_modules",
+    "**/Pods",
+    "android/build",
+    "ios/build",
+    "ios/DerivedData",
+    "vendor"
+  ]
 }

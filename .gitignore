@@ -1,0 +1,32 @@
+.DS_Store
+
+# JavaScript dependencies and logs
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Android machine-local and build outputs
+android/.gradle/
+android/local.properties
+android/app/build/
+android/app/.cxx/
+android/build/
+*.jks
+*.keystore
+
+# iOS dependencies and build outputs
+ios/Pods/
+ios/build/
+ios/DerivedData/
+ios/*.xcworkspace/xcuserdata/
+ios/*.xcodeproj/xcuserdata/
+*.xcuserstate
+
+# Bundler output
+.bundle/
+vendor/bundle/
+
+# Local secrets
+.env
+.env.*
