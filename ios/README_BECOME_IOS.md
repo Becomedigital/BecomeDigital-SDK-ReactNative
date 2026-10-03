@@ -1,29 +1,42 @@
-# Integracion iOS de Become Digital
+# Integración iOS del bridge React Native de Become Digital
 
-La app ya incluye el puente React Native para iOS con el mismo modulo JS que Android: `BecomeModule.iniciarBecomeSDK(params)`.
+El target `BecomeDigitalApp` ya contiene la SDK nativa, sus recursos y el módulo que expone `BecomeModule.iniciarBecomeSDK(params)` a React Native. Esta guía describe cómo reproducir esa configuración y probarla en un iPhone físico; no es necesario volver a agregar manualmente las dependencias si el proyecto clonado está intacto.
 
-## Archivos agregados
+## Configuración incluida
 
-- `ios/BecomeDigitalApp/BecomeModule.swift`
-- `ios/BecomeDigitalApp/BecomeModuleBridge.m`
+- `BecomeModule.swift` construye `BDIVConfig`, presenta el flujo nativo y convierte las respuestas de `BDIVDelegate` en una promesa de React Native. `BecomeModuleBridge.m` exporta el método Swift mediante `RCT_EXTERN_MODULE`.
+- `BecomeDigitalApp/Frameworks/BDIdentityVerification.xcframework` está enlazado con **Embed & Sign** y contiene slices para dispositivo (`ios-arm64`) y simulador (`ios-arm64_x86_64-simulator`).
+- `com.become.document.key.txt` forma parte de los recursos del target. El bridge rechaza la llamada con `MISSING_LICENSE_FILES` si no lo encuentra en el bundle.
+- `Info.plist` declara `NSCameraUsageDescription` y `NSMicrophoneUsageDescription`. El proyecto usa firma de desarrollo para instalarse en un iPhone físico; cada equipo debe seleccionar una identidad y un equipo de firma válidos en Xcode.
+- `Podfile` instala React Native y alinea el deployment target de los Pods con el mínimo admitido por esta versión de React Native.
 
-## Configuracion nativa verificada
+El proyecto Xcode declara estas versiones mínimas de Swift Package Manager: `amplify-swift` 2.45.4, `amplify-ui-swift-liveness` 1.4.4, `capture-core-sp` 1.4.3 y `capture-ux-sp` 1.4.3. Las versiones efectivamente resueltas se consultan en `BecomeDigitalApp.xcworkspace/xcshareddata/swiftpm/Package.resolved`; pueden ser superiores a los mínimos del proyecto.
 
-1. Verificar que `BDIdentityVerification.xcframework` quede agregado al target `BecomeDigitalApp` con `Embed & Sign`.
-2. Agregar a ese mismo target:
-   - `com.become.document.key.txt`
-3. En `File > Add Packages`, registrar:
-   - `https://github.com/aws-amplify/amplify-swift` desde `2.45.4`
-   - `https://github.com/aws-amplify/amplify-ui-swift-liveness` desde `1.4.4`
-   - `https://github.com/BlinkID/capture-core-sp` desde `1.4.3`
-   - `https://github.com/BlinkID/capture-ux-sp` desde `1.4.3`
-4. Asociar los productos de esos paquetes al target `BecomeDigitalApp`.
+## Preparación y ejecución en iPhone
 
-## Notas
+Desde la raíz del repositorio:
 
-- `Info.plist` ya incluye `NSCameraUsageDescription`.
-- `Info.plist` ya incluye `NSMicrophoneUsageDescription`.
-- El XCFramework actualizado incluye slices para dispositivo (`ios-arm64`) y simulador (`ios-arm64_x86_64-simulator`). La validacion final de camara y biometria debe hacerse en un dispositivo fisico.
-- El parametro opcional `preventScreenCapture` del bridge usa `true` por defecto. La pantalla demo envia `false` para permitir capturas durante las pruebas manuales.
-- El modulo valida que existan las licencias y que el framework `BDIdentityVerification` este enlazado.
-- Si falta algo, React Native recibira un error explicito en la promesa.
+```sh
+npm ci
+bundle install
+cd ios
+bundle exec pod install
+```
+
+Abrir `BecomeDigitalApp.xcworkspace` en Xcode, verificar la firma del target `BecomeDigitalApp`, conectar y confiar en el iPhone y seleccionar ese dispositivo como destino. Después, ejecutar desde Xcode o volver a la raíz y usar:
+
+```sh
+npx react-native run-ios --device "Nombre del iPhone"
+```
+
+Para una compilación Release de dispositivo, Xcode incluye el bundle de JavaScript en la app; una compilación Debug necesita Metro accesible desde el iPhone. El simulador sirve para comprobar compilación y UI, pero la cámara y la biometría deben validarse en un dispositivo físico.
+
+## Contrato y diagnóstico
+
+El método recibe `clientId`, `clientSecret`, `contractId` y `userId`; `preventScreenCapture` es opcional y vale `true` si se omite. La pantalla demo envía `false` para facilitar las pruebas manuales. No hay credenciales de testing incorporadas al código: deben introducirse en el formulario o cargarse desde un perfil guardado localmente por el usuario.
+
+El bridge resuelve la promesa con `status`, `message` y `userId` cuando la SDK devuelve `SUCCES` o `PENDING`. Rechaza con `SDK_ERROR` cuando recibe `ERROR`, `NOFOUND` o el callback de error. También puede rechazar antes de abrir la SDK por parámetros inválidos, archivo de licencia o declaración `NSCameraUsageDescription` faltante, ausencia de controlador visible, SDK no enlazada o una verificación ya en curso. El demo muestra el código y mensaje de rechazo en «Error devuelto por la SDK».
+
+`BDIVDelegate` expone callbacks de éxito y error, pero no uno de cancelación independiente. Por ello, no se debe asumir que iOS devuelve el código Android `USER_CANCELLED`. Para el contrato compartido y las instrucciones del demo, consultar el [README principal](../README.md).
+
+El flujo fue probado manualmente en un iPhone 11 físico el 2 de octubre de 2026. Repetir la prueba tras cambiar el XCFramework, los paquetes Swift o el bridge.
