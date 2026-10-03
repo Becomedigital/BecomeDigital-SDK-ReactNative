@@ -42,6 +42,7 @@ final class BecomeModule: NSObject {
     let clientSecret = (params["clientSecret"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     let contractId = (params["contractId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     let userId = (params["userId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    let preventScreenCapture = (params["preventScreenCapture"] as? NSNumber)?.boolValue ?? true
 
     guard !clientId.isEmpty, !clientSecret.isEmpty, !contractId.isEmpty else {
       reject("INVALID_PARAMS", "clientId, clientSecret y contractId son requeridos.", nil)
@@ -98,7 +99,8 @@ final class BecomeModule: NSObject {
       documenTypes: [.DNI, .DRIVERLICENSE, .PASSPORT],
       userId: userId,
       customerLogo: "icon",
-      customLocalizationFileName: "MBLocalizable"
+      customLocalizationFileName: "MBLocalizable",
+      preventScreenCapture: preventScreenCapture
     )
 
     let hostController = BecomeSDKHostViewController(
@@ -119,7 +121,7 @@ final class BecomeModule: NSObject {
 #else
     reject(
       "SDK_NOT_LINKED",
-      "El framework BecomeDigitalV.xcframework no esta enlazado al target de iOS.",
+      "El framework BDIdentityVerification.xcframework no esta enlazado al target de iOS.",
       nil
     )
 #endif
