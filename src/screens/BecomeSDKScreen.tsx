@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -29,6 +29,7 @@ type VerificationStatus = 'idle' | 'loading' | 'success' | 'error' | 'cancelled'
 interface ResultState {
   status: VerificationStatus;
   data?: BecomeSDKResult;
+  errorCode?: string;
   errorMessage?: string;
 }
 
@@ -38,6 +39,11 @@ const BecomeSDKScreen = () => {
   const [clientSecret, setClientSecret] = useState('');
   const [contractId, setContractId]     = useState('');
   const [result, setResult]             = useState<ResultState>({status: 'idle'});
+  const scrollRef = useRef<ScrollView>(null);
+  const hasSdkError = result.status === 'error' || result.status === 'cancelled';
+  const sdkErrorText = hasSdkError
+    ? `${result.errorCode ?? 'UNKNOWN_ERROR'}: ${result.errorMessage ?? 'Sin detalle devuelto por la SDK.'}`
+    : '';
 
   // Load testing profile on mount
   useEffect(() => {
@@ -119,22 +125,19 @@ const BecomeSDKScreen = () => {
       const response = await BecomeModule.iniciarBecomeSDK(params);
       console.log('[BecomeSDK] ✓ Respuesta recibida:', JSON.stringify(response));
       setResult({status: 'success', data: response});
-    } catch (error: any) {
-      console.log('[BecomeSDK] ✗ Error capturado en JS:');
-      console.log('[BecomeSDK]   error.code    =', error?.code);
-      console.log('[BecomeSDK]   error.message =', error?.message);
-      console.log('[BecomeSDK]   error (full)  =', JSON.stringify(error));
-
-      if (error?.code === 'USER_CANCELLED') {
-        console.log('[BecomeSDK]   → Usuario canceló el flujo');
-        setResult({status: 'cancelled'});
-      } else {
-        console.log('[BecomeSDK]   → Error de SDK o nativo');
-        setResult({
-          status: 'error',
-          errorMessage: error?.message ?? 'Error desconocido.',
-        });
-      }
+    } catch (error) {
+      const nativeError = error as {code?: unknown; message?: unknown};
+      const errorCode = typeof nativeError?.code === 'string'
+        ? nativeError.code
+        : 'UNKNOWN_ERROR';
+      const errorMessage = typeof nativeError?.message === 'string'
+        ? nativeError.message
+        : String(error);
+      setResult({
+        status: errorCode === 'USER_CANCELLED' ? 'cancelled' : 'error',
+        errorCode,
+        errorMessage,
+      });
     }
   };
 
@@ -176,9 +179,13 @@ const BecomeSDKScreen = () => {
         style={styles.flex}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => {
+              if (hasSdkError) scrollRef.current?.scrollToEnd({animated: true});
+            }}>
 
             {/* ── Header ── */}
             <View style={styles.headerContainer}>
@@ -253,6 +260,15 @@ const BecomeSDKScreen = () => {
                 <Text style={styles.ctaButtonText}>🛡️  Iniciar Verificación</Text>
               )}
             </TouchableOpacity>
+
+            {hasSdkError && (
+              <View style={styles.sdkErrorContainer}>
+                <Text style={styles.sdkErrorLabel}>Error devuelto por la SDK</Text>
+                <Text style={styles.sdkErrorValue} selectable>
+                  {sdkErrorText}
+                </Text>
+              </View>
+            )}
 
             {/* ── Result Panel ── */}
             {result.status !== 'idle' && result.status !== 'loading' && (
@@ -537,6 +553,27 @@ const styles = StyleSheet.create({
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+
+  // Native SDK error, shown separately so testers can copy its code and message.
+  sdkErrorContainer: {
+    backgroundColor: COLORS.errorBg,
+    borderColor: COLORS.danger,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 16,
+  },
+  sdkErrorLabel: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  sdkErrorValue: {
+    color: COLORS.text,
+    fontSize: 14,
+    lineHeight: 20,
   },
 
   // Saved Connections Buttons
