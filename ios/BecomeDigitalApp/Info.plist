@@ -35,8 +35,6 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>Requerimos acceso a la camara para propositos de verificacion de identidad.</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string></string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Requerimos acceso al microfono para completar el flujo de verificacion de identidad.</string>
 	<key>RCTNewArchEnabled</key>

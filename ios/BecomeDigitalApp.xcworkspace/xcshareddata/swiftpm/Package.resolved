@@ -1,5 +1,5 @@
 {
-  "originHash" : "c326fb3b64d90732b4d83602d5e0aa38a92f40933ddd8cd258760f3a277c7ebf",
+  "originHash" : "5eabcf89d5d5b169511f8c27c58c18b6c5dfb857d6c727e713ca247d22de5dad",
   "pins" : [
     {
       "identity" : "amplify-swift",
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/BlinkID/capture-core-sp",
       "state" : {
-        "branch" : "main",
-        "revision" : "1bb2f89cc9ba283d4cd3536f1934d6277c89d6f6"
+        "revision" : "1bb2f89cc9ba283d4cd3536f1934d6277c89d6f6",
+        "version" : "1.4.3"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/BlinkID/capture-ux-sp",
       "state" : {
-        "branch" : "main",
-        "revision" : "42b6c284b1d5a07b62d2441e9bf08b62040ff7c7"
+        "revision" : "42b6c284b1d5a07b62d2441e9bf08b62040ff7c7",
+        "version" : "1.4.3"
       }
     },
     {
