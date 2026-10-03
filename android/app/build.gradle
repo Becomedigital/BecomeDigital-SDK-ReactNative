@@ -33,6 +33,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        testApplicationId "com.becomedigitalapp.bridgetest"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         // Required: core library desugaring for Become Digital SDK
         multiDexEnabled true
@@ -132,7 +134,7 @@ dependencies {
     implementation "com.amplifyframework.ui:liveness:1.10.0"
     implementation "com.amplifyframework:aws-auth-cognito:2.33.0"
     implementation "androidx.compose.material3:material3:1.4.0"
-    implementation "androidx.activity:activity-compose:1.12.4"
+    implementation "androidx.activity:activity-compose:1.7.2"
 
     // ===== OCR / Capture (Microblink) =====
     implementation "com.microblink:capture-core:1.4.2"
@@ -140,14 +142,17 @@ dependencies {
 
     // ===== Additional SDK Dependencies =====
     implementation "com.android.volley:volley:1.2.1"
-    def room_version = "1.1.0"
-    implementation "android.arch.persistence.room:runtime:$room_version"
-    annotationProcessor "android.arch.persistence.room:compiler:$room_version"
-    implementation "android.arch.lifecycle:livedata:1.1.1"
-    implementation "android.arch.lifecycle:viewmodel:1.1.1"
+    def room_version = "2.6.1"
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+    def lifecycle_version = "2.8.7"
+    implementation "androidx.lifecycle:lifecycle-livedata:$lifecycle_version"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version"
 
     // ===== Tests =====
     testImplementation "junit:junit:4.13.2"
     androidTestImplementation "androidx.test.espresso:espresso-core:3.5.1"
+    androidTestImplementation "androidx.test:rules:1.5.0"
+    androidTestImplementation "androidx.test:runner:1.5.2"
     androidTestImplementation "androidx.test.uiautomator:uiautomator:2.3.0"
 }
