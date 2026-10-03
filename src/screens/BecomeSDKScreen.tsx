@@ -17,7 +17,7 @@ import {
   KeyboardTypeOptions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {SafeAreaView} from 'react-native-safe-area-context';
+import {initialWindowMetrics} from 'react-native-safe-area-context';
 import BecomeModule, {
   BecomeSDKParams,
   BecomeSDKResult,
@@ -171,7 +171,7 @@ const BecomeSDKScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
       <KeyboardAvoidingView
@@ -279,7 +279,7 @@ const BecomeSDKScreen = () => {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -436,6 +436,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: COLORS.bg,
+    paddingTop: Platform.OS === 'ios' ? (initialWindowMetrics?.insets.top ?? 44) : 0,
+    paddingBottom: Platform.OS === 'ios' ? (initialWindowMetrics?.insets.bottom ?? 0) : 0,
+    paddingLeft: Platform.OS === 'ios' ? (initialWindowMetrics?.insets.left ?? 0) : 0,
+    paddingRight: Platform.OS === 'ios' ? (initialWindowMetrics?.insets.right ?? 0) : 0,
   },
   flex: {flex: 1},
   scrollContent: {
