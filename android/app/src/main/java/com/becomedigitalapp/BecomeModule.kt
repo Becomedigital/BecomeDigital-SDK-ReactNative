@@ -14,9 +14,7 @@ import com.facebook.react.bridge.*
  * BecomeModule – React Native ↔ Android Native Module Bridge
  *
  * API surface verified via `javap` directly from becomedigitalsdk.aar.
- *
- * BDIVConfig constructor (Java, positional):
- *   BDIVConfig(clienId, clientSecret, contractId, DocumetType[], allowLibraryLoading, userId, customerLogo)
+ * Screen capture protection is enabled by default and can be configured from JS.
  *
  * BecomeCallBackManager.createNew()  ← static factory method
  * BecomeResponseManager.getInstance().startAuthentication(activity, config)
@@ -45,6 +43,7 @@ class BecomeModule(private val reactContext: ReactApplicationContext) :
      *   clientSecret : String
      *   contractId   : String
      *   userId       : String
+     *   preventScreenCapture : Boolean? (defaults to true)
      */
     @ReactMethod
     fun iniciarBecomeSDK(params: ReadableMap, promise: Promise) {
@@ -64,11 +63,13 @@ class BecomeModule(private val reactContext: ReactApplicationContext) :
         val clientSecret = params.getString("clientSecret") ?: ""
         val contractId   = params.getString("contractId")   ?: ""
         val userId       = params.getString("userId")       ?: ""
-
-        Log.d(TAG, "  clientId     = '$clientId'")
-        Log.d(TAG, "  clientSecret = '${clientSecret.take(4)}****' (${clientSecret.length} chars)")
-        Log.d(TAG, "  contractId   = '$contractId'")
-        Log.d(TAG, "  userId       = '$userId'")
+        val preventScreenCapture = if (
+            params.hasKey("preventScreenCapture") && !params.isNull("preventScreenCapture")
+        ) {
+            params.getBoolean("preventScreenCapture")
+        } else {
+            true
+        }
 
         if (clientId.isBlank() || clientSecret.isBlank() || contractId.isBlank()) {
             Log.e(TAG, "✗ Parámetros vacíos — abortando")
@@ -81,7 +82,6 @@ class BecomeModule(private val reactContext: ReactApplicationContext) :
             val assets = reactContext.assets.list("") ?: emptyArray()
             val keyFound = assets.contains("com.become.mb.key")
             Log.d(TAG, "  Licencia 'com.become.mb.key' en assets: $keyFound")
-            Log.d(TAG, "  Archivos en assets: ${assets.joinToString()}")
             if (!keyFound) {
                 Log.e(TAG, "✗ ARCHIVO DE LICENCIA NO ENCONTRADO en assets/")
             }
@@ -110,6 +110,7 @@ class BecomeModule(private val reactContext: ReactApplicationContext) :
                 userId,                                               // userId
                 null                                                  // customerLogo (byte[]) — optional
             )
+            config.setPreventScreenCapture(preventScreenCapture)
             Log.d(TAG, "✓ BDIVConfig construido correctamente")
         } catch (e: Exception) {
             Log.e(TAG, "✗ Error construyendo BDIVConfig: ${e::class.simpleName} — ${e.message}", e)
