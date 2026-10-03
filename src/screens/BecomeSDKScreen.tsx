@@ -113,10 +113,6 @@ const BecomeSDKScreen = () => {
     };
 
     console.log('[BecomeSDK] ▶ Iniciando verificación...');
-    console.log('[BecomeSDK]   clientId    =', params.clientId);
-    console.log('[BecomeSDK]   contractId  =', params.contractId);
-    console.log('[BecomeSDK]   userId      =', params.userId);
-    console.log('[BecomeSDK]   clientSecret length =', params.clientSecret.length);
 
     try {
       console.log('[BecomeSDK] ▶ Llamando BecomeModule.iniciarBecomeSDK()...');
