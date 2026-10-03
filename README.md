@@ -1,19 +1,20 @@
-# Become Digital App
+# Bridge React Native de Become Digital
 
-Este proyecto demuestra cómo exponer la SDK de Become a React Native mediante bridges nativos en Android e iOS.
+Este repositorio contiene una app de demostración que invoca la SDK de Become Digital desde React Native mediante bridges nativos en Android e iOS. Explica cómo ejecutar el demo, llamar al bridge y observar su respuesta; la configuración detallada de cada SDK nativa está en sus guías de integración.
 
-Este README documenta únicamente cómo está construido el bridge en cada plataforma. La integración específica de la SDK, dependencias, licencias y configuración nativa debe consultarse en la documentación de cada plataforma.
+Las credenciales de prueba no forman parte del código fuente. Cada persona debe obtenerlas por un canal seguro antes de iniciar una verificación.
 
 ## Documentación de integración de la SDK
 
-- Android: [Guía de integración Adroid](https://github.com/Becomedigital/BecomeDigitalSDKAutDirectPro-Android)
+- Android: [Guía de integración Android](https://github.com/Becomedigital/BecomeDigitalSDKAutDirectPro-Android)
 - iOS: [Guía de integración iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutDirectPro-iOS)
+- Configuración de este proyecto iOS: [ios/README_BECOME_IOS.md](ios/README_BECOME_IOS.md)
 
 ## Entorno recomendado
 
 Antes de ejecutar el proyecto, validar lo siguiente:
 
-- Node.js instalado y dependencias de `npm` ya descargadas
+- Node.js 22.11 o superior (requisito de `package.json`); instalar las dependencias desde la raíz con `npm ci`
 - Android Studio correctamente configurado para Android
 - Xcode correctamente configurado para iOS
 - Ruby/Bundler disponibles para instalar Pods en iOS
@@ -128,7 +129,7 @@ Esto permite que React Native descubra el bridge durante la inicialización de l
 
 #### 3. Registro en la aplicación
 
-`MainApplication.kt` agrega `BecomePackage()` dentro de `getPackages()`.
+`MainApplication.kt` agrega `BecomePackage()` a la lista creada por `PackageList(this).packages`.
 
 Este paso es obligatorio porque el módulo fue creado manualmente dentro del proyecto y no proviene de autolinking de una librería NPM.
 
@@ -149,11 +150,11 @@ La pantalla React Native no llama directamente a clases nativas de Android. Solo
 5. El callback devuelve el resultado.
 6. El bridge resuelve o rechaza la promesa hacia JS.
 
-### Nota
+### Configuración de la SDK Android
 
 La configuración de la SDK de Android, dependencias, permisos y troubleshooting no se documentan aquí. Consultar la guía específica de Android:
 
-- [Guía de integración Adroid](https://github.com/Becomedigital/BecomeDigitalSDKAutDirectPro-Android)
+- [Guía de integración Android](https://github.com/Becomedigital/BecomeDigitalSDKAutDirectPro-Android)
 
 ## Bridge iOS
 
@@ -202,7 +203,7 @@ se usa para consumir el bridge iOS desde la app React Native.
 6. `BDIVDelegate` devuelve el resultado.
 7. El bridge resuelve o rechaza la promesa hacia JS.
 
-### Nota
+### Configuración de la SDK iOS
 
 La integración de la SDK de iOS, paquetes SPM, permisos, licencias y configuración del framework no se documentan aquí. Consultar la guía específica de iOS:
 
@@ -222,6 +223,26 @@ Ese archivo define:
 
 Esto permite que la pantalla React Native use una única interfaz sin preocuparse por la implementación específica de cada plataforma.
 
+`iniciarBecomeSDK(params)` recibe `clientId`, `clientSecret`, `contractId` y `userId` como cadenas obligatorias. La opción `preventScreenCapture` es booleana y, si se omite, ambas plataformas la tratan como `true`. La pantalla demo genera un `userId` nuevo en cada intento.
+
+Ejemplo de llamada desde la app (obtener las credenciales fuera del código fuente):
+
+```ts
+import BecomeModule from './src/types/BecomeModule';
+
+const result = await BecomeModule.iniciarBecomeSDK({
+  clientId,
+  clientSecret,
+  contractId,
+  userId: `user-${Date.now()}`,
+  preventScreenCapture: true,
+});
+```
+
+La promesa resuelta entrega `status`, `message` y `userId`; `requestId` y `responseURL` son opcionales y pueden no estar disponibles según la plataforma y la respuesta de la SDK. Un rechazo entrega `code` y `message`. Por ejemplo, ambas plataformas pueden devolver `INVALID_PARAMS` o `SDK_ERROR`; Android también devuelve `USER_CANCELLED` cuando recibe una cancelación explícita. El demo muestra el código y el mensaje devueltos en el campo seleccionable «Error devuelto por la SDK».
+
+El valor de éxito de la SDK se escribe `SUCCES` (sin la segunda *s*); se conserva así en `status` para no alterar el contrato nativo.
+
 ### Protección de capturas de pantalla
 
 `iniciarBecomeSDK` acepta `preventScreenCapture?: boolean` en ambas plataformas. El valor predeterminado es `true`; al enviarlo en `false`, la SDK permite capturas y grabaciones durante el flujo. La pantalla demo usa `false` para facilitar las pruebas manuales, igual que los demos nativos.
@@ -240,7 +261,13 @@ En Android, `android/app/src/main/res/values/become_config.xml` fija en `180` se
 
 Todos los comandos de ejecución de React Native deben lanzarse desde la raíz del proyecto:
 
-- `BecomeDigitalApp/`
+- `BecomeDigital-SDK-ReactNative/`
+
+Instalar las dependencias JavaScript antes de abrir el proyecto nativo:
+
+```sh
+npm ci
+```
 
 ### Metro
 
@@ -307,3 +334,15 @@ Si tienes más de un dispositivo disponible, puedes indicar el nombre:
 ```sh
 npx react-native run-ios --device "Nombre del iPhone"
 ```
+
+## Uso del demo y pruebas manuales
+
+1. Ingresar las credenciales de **testing** en `Client ID`, `Client Secret` y `Contract ID`. El botón «Iniciar Verificación» permanece deshabilitado mientras falte algún campo.
+2. Pulsar «Iniciar Verificación» y completar el flujo en la UI nativa de la SDK. El demo solicita cámara en Android antes de llamar al bridge; iOS solicita los permisos mediante la configuración nativa de la SDK.
+3. Revisar el resultado en la pantalla React Native. Si la promesa se rechaza, copiar el código y mensaje del campo «Error devuelto por la SDK» para el diagnóstico.
+
+«Guardar Testing» conserva los tres campos en `AsyncStorage` **solo en la instalación local**; «Cargar Testing» los recupera y el demo intenta cargarlos al abrirse. Este almacenamiento no es un gestor seguro de secretos: usar únicamente credenciales de prueba, no incluirlas en archivos versionados ni en capturas/logs, y borrar los datos de la app de pruebas cuando ya no se necesiten. La app instalada desde el código del repositorio inicia con los campos vacíos si no hay un perfil guardado.
+
+En iOS, el contenedor del demo aplica el inset superior e inferior de la ventana para respetar la zona segura del dispositivo. El valor `preventScreenCapture` se establece en `false` únicamente en esta pantalla de demostración, para facilitar la observación del flujo; una app integradora debe decidir explícitamente su política de capturas.
+
+Validación de referencia del 2 de octubre de 2026: el demo se ejecutó en un Xiaomi físico con Android y en un iPhone 11 físico. En Android se observó el callback `SUCCES`; la prueba manual de iPhone fue confirmada por el usuario. Repetir estas comprobaciones tras actualizar la SDK o las dependencias nativas.
