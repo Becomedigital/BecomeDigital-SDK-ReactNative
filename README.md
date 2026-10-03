@@ -114,7 +114,7 @@ Archivos compartidos del lado React Native:
 Sus responsabilidades son:
 
 - recibir el `ReadableMap` enviado desde JavaScript
-- leer `clientId`, `clientSecret`, `contractId` y `userId`
+- leer `clientId`, `clientSecret`, `contractId`, `userId` y la protección opcional de pantalla
 - construir la configuración nativa del SDK
 - iniciar el flujo del SDK usando la `Activity` actual
 - escuchar la respuesta del SDK mediante callback
@@ -221,6 +221,12 @@ Ese archivo define:
 - nombre del módulo consumido desde `NativeModules`
 
 Esto permite que la pantalla React Native use una única interfaz sin preocuparse por la implementación específica de cada plataforma.
+
+### Protección de capturas de pantalla
+
+`iniciarBecomeSDK` acepta `preventScreenCapture?: boolean` en ambas plataformas. El valor predeterminado es `true`; al enviarlo en `false`, la SDK permite capturas y grabaciones durante el flujo. La pantalla demo usa `false` para facilitar las pruebas manuales, igual que los demos nativos.
+
+En Android, `android/app/src/main/res/values/become_config.xml` fija en `180` segundos el timeout de conexión, lectura y escritura recomendado por la SDK. Este timeout de red es independiente del timeout de polling de resultados.
 
 ## Recomendaciones para extender el bridge
 
