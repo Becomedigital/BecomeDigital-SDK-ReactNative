@@ -27,9 +27,9 @@ Los dos módulos nativos deben exportar el mismo nombre, `BecomeModule`, y el mi
 
 En el ejemplo, el AAR está en [`android/app/libs/becomedigitalsdk.aar`](android/app/libs/becomedigitalsdk.aar) y la licencia en `android/app/src/main/assets/com.become.mb.key`. En su app, coloque los artefactos y la licencia autorizados para su contrato en las ubicaciones que indique la guía nativa.
 
-Revise [`android/app/build.gradle`](android/app/build.gradle) para las dependencias, repositorios, Compose, desugaring y opciones de compilación que necesita esta versión de la SDK. Revise [`android/app/src/main/AndroidManifest.xml`](android/app/src/main/AndroidManifest.xml) para los permisos declarados, especialmente cámara e Internet. El ejemplo también define un timeout de red en [`become_config.xml`](android/app/src/main/res/values/become_config.xml). Integre estos ajustes con los existentes en su app; no sustituya todo su archivo Gradle o manifest por el del demo.
+Revise [`android/app/build.gradle`](android/app/build.gradle) para las dependencias, repositorios, Compose, desugaring y opciones de compilación que necesita esta versión de la SDK. Revise [`android/app/src/main/AndroidManifest.xml`](android/app/src/main/AndroidManifest.xml) para los permisos declarados, especialmente cámara e Internet. El ejemplo también define un timeout de red en [`become_config.xml`](android/app/src/main/res/values/become_config.xml). Integre estos ajustes con los existentes en su app; no sustituya todo su archivo Gradle o manifest por el del demo. El demo usa la firma de depuración de Android también para compilaciones `release`; no incluye una llave de distribución. Configure la firma de producción por separado en su propia app.
 
-Configure su Android SDK y `JAVA_HOME` en la máquina de desarrollo. `android/local.properties` contiene un `sdk.dir` de ejemplo que debe apuntar al SDK local; no incluya una ruta personal en un commit.
+Configure su Android SDK y `JAVA_HOME` en la máquina de desarrollo. Si necesita `android/local.properties`, indique allí la ruta `sdk.dir` de su equipo; ese archivo es local y no debe incluirse en un commit.
 
 ### iOS
 
