@@ -8,6 +8,7 @@ yarn-error.log*
 
 # Android machine-local and build outputs
 android/.gradle/
+android/.kotlin/
 android/local.properties
 android/app/build/
 android/app/.cxx/
@@ -30,3 +31,7 @@ vendor/bundle/
 # Local secrets
 .env
 .env.*
+/config/credentials.local.json
+/artifacts/
+/coverage/
+**/.xcode.env.local

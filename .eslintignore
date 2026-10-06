@@ -5,3 +5,4 @@ ios/DerivedData/
 ios/Pods/
 node_modules/
 vendor/
+artifacts/

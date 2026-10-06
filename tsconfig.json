@@ -13,6 +13,7 @@
     "android/build",
     "ios/build",
     "ios/DerivedData",
-    "vendor"
+    "vendor",
+    "artifacts"
   ]
 }
