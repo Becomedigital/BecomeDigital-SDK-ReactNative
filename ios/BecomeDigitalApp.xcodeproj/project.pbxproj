@@ -557,32 +557,32 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/BlinkID/capture-ux-sp";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.3;
+				kind = exactVersion;
+				version = 1.4.3;
 			};
 		};
 		BB2321432F66490B005E9EAA /* XCRemoteSwiftPackageReference "capture-core-sp" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/BlinkID/capture-core-sp";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.3;
+				kind = exactVersion;
+				version = 1.4.3;
 			};
 		};
 		BB9FACFB2F66285600AC371A /* XCRemoteSwiftPackageReference "amplify-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/aws-amplify/amplify-swift";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.45.4;
+				kind = exactVersion;
+				version = 2.53.3;
 			};
 		};
 		BB9FACFC2F66290600AC371A /* XCRemoteSwiftPackageReference "amplify-ui-swift-liveness" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/aws-amplify/amplify-ui-swift-liveness";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.4.4;
+				kind = exactVersion;
+				version = 1.4.4;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
