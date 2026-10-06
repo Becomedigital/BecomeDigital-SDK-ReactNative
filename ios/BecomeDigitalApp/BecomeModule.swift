@@ -1,6 +1,7 @@
 import Foundation
 import React
 import UIKit
+import AVFoundation
 
 #if canImport(BDIdentityVerification)
 import BDIdentityVerification
@@ -10,7 +11,6 @@ import BDIdentityVerification
 final class BecomeModule: NSObject {
   private var pendingResolve: RCTPromiseResolveBlock?
   private var pendingReject: RCTPromiseRejectBlock?
-  private var pendingUserId: String?
 
   @objc
   static func requiresMainQueueSetup() -> Bool {
@@ -42,10 +42,16 @@ final class BecomeModule: NSObject {
     let clientSecret = (params["clientSecret"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     let contractId = (params["contractId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     let userId = (params["userId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    if let option = params["preventScreenCapture"], !(option is NSNull) {
+      guard let number = option as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else {
+        reject("INVALID_PARAMS", "preventScreenCapture debe ser booleano.", nil)
+        return
+      }
+    }
     let preventScreenCapture = (params["preventScreenCapture"] as? NSNumber)?.boolValue ?? true
 
-    guard !clientId.isEmpty, !clientSecret.isEmpty, !contractId.isEmpty else {
-      reject("INVALID_PARAMS", "clientId, clientSecret y contractId son requeridos.", nil)
+    guard !clientId.isEmpty, !clientSecret.isEmpty, !contractId.isEmpty, !userId.isEmpty else {
+      reject("INVALID_PARAMS", "clientId, clientSecret, contractId y userId son requeridos.", nil)
       return
     }
 
@@ -79,7 +85,7 @@ final class BecomeModule: NSObject {
     }
 
 #if canImport(BDIdentityVerification)
-    guard let presenter = topViewController() else {
+    guard topViewController() != nil else {
       reject(
         "NO_VIEW_CONTROLLER",
         "No fue posible obtener un UIViewController visible para iniciar el SDK.",
@@ -90,15 +96,14 @@ final class BecomeModule: NSObject {
 
     pendingResolve = resolve
     pendingReject = reject
-    pendingUserId = userId
 
     let config = BDIVConfig(
       clienId: clientId,
       clientSecret: clientSecret,
       contractId: contractId,
-      documenTypes: [.DNI, .DRIVERLICENSE, .PASSPORT],
+      documenTypes: [.DNI, .PASSPORT],
       userId: userId,
-      customerLogo: "icon",
+      customerLogo: "",
       customLocalizationFileName: "MBLocalizable",
       preventScreenCapture: preventScreenCapture
     )
@@ -117,7 +122,30 @@ final class BecomeModule: NSObject {
 
     hostController.modalPresentationStyle = .overFullScreen
     hostController.modalTransitionStyle = .crossDissolve
-    presenter.present(hostController, animated: false)
+    let present = {
+      guard let currentPresenter = self.topViewController(),
+            currentPresenter.viewIfLoaded?.window != nil else {
+        self.finishWithError(code: "NO_VIEW_CONTROLLER", message: "Vuelve a la app antes de iniciar la SDK.")
+        return
+      }
+      currentPresenter.present(hostController, animated: false)
+    }
+    switch AVCaptureDevice.authorizationStatus(for: .video) {
+    case .authorized:
+      present()
+    case .notDetermined:
+      AVCaptureDevice.requestAccess(for: .video) { granted in
+        DispatchQueue.main.async {
+          if granted {
+            present()
+          } else {
+            self.finishWithError(code: "CAMERA_PERMISSION_DENIED", message: "Concede el permiso de cámara en Ajustes.")
+          }
+        }
+      }
+    default:
+      finishWithError(code: "CAMERA_PERMISSION_DENIED", message: "Concede el permiso de cámara en Ajustes.")
+    }
 #else
     reject(
       "SDK_NOT_LINKED",
@@ -135,7 +163,6 @@ final class BecomeModule: NSObject {
   private func clearPendingState() {
     pendingResolve = nil
     pendingReject = nil
-    pendingUserId = nil
   }
 
   private func topViewController() -> UIViewController? {
@@ -174,6 +201,7 @@ private final class BecomeSDKHostViewController: UIViewController {
   private let onSuccess: ([String: Any]) -> Void
   private let onError: (String, String) -> Void
   private var hasStarted = false
+  private var hasFinished = false
   private var identityVerification: BecomeDigitalSDK?
 
   init(
@@ -241,12 +269,19 @@ extension BecomeSDKHostViewController: BDIVDelegate {
       return
     }
 
-    let payload: [String: Any] = [
+    guard status == "SUCCES" || status == "PENDING" else {
+      completeWithError(code: "INVALID_RESPONSE", message: "La SDK devolvió un estado no reconocido.")
+      return
+    }
+    var payload: [String: Any] = [
       "status": status,
       "message": response.message.isEmpty ? "Verificacion completada." : response.message,
-      "responseURL": response.responseDictionary?["responseURL"] as? String ?? "",
       "userId": userId,
     ]
+    // Keep the optional field for compatibility, without inventing an empty URL.
+    if let url = response.responseDictionary?["responseURL"] as? String, !url.isEmpty {
+      payload["responseURL"] = url
+    }
 
     finish {
       self.onSuccess(payload)
@@ -267,12 +302,15 @@ extension BecomeSDKHostViewController: BDIVDelegate {
   }
 
   private func finish(completion: @escaping () -> Void) {
-    identityVerification = nil
-
-    if presentingViewController != nil {
-      dismiss(animated: false, completion: completion)
-    } else {
-      completion()
+    DispatchQueue.main.async {
+      guard !self.hasFinished else { return }
+      self.hasFinished = true
+      self.identityVerification = nil
+      if self.presentingViewController != nil {
+        self.dismiss(animated: false, completion: completion)
+      } else {
+        completion()
+      }
     }
   }
 }
