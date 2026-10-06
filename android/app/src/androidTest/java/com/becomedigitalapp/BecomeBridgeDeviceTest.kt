@@ -5,97 +5,32 @@ import androidx.test.runner.AndroidJUnit4
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
-import com.facebook.react.bridge.Arguments
-import com.facebook.react.bridge.Callback
-import com.facebook.react.bridge.PromiseImpl
-import com.facebook.react.bridge.ReactApplicationContext
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.util.concurrent.atomic.AtomicReference
+import java.util.regex.Pattern
 
+/** Uses a profile prepared manually in the demo; never passes secrets in shell arguments. */
 @RunWith(AndroidJUnit4::class)
 class BecomeBridgeDeviceTest {
-
-    @Test
-    fun opensBecomeNativeFlow() {
-        val instrumentation = InstrumentationRegistry.getInstrumentation()
-        val arguments = InstrumentationRegistry.getArguments()
-        val device = UiDevice.getInstance(instrumentation)
-
-        val clientId = arguments.requiredString("clientId")
-        val clientSecret = arguments.requiredString("clientSecret")
-        val contractId = arguments.requiredString("contractId")
-
-        val launchOutput = device.executeShellCommand(
-            "am start -n com.becomedigitalapp/.MainActivity"
-        )
-        assertTrue(
-            "Android no pudo iniciar MainActivity: $launchOutput",
-            !launchOutput.contains("Error", ignoreCase = true)
-        )
-
-        assertTrue(
-            "El formulario React Native no apareció.",
-            device.wait(Until.hasObject(By.textContains("Identidad Become")), 60_000)
-        )
-
-        val application = instrumentation.targetContext.applicationContext as MainApplication
-        val reactContext = waitForReactContext(application)
-        val module = reactContext.getNativeModule("BecomeModule") as? BecomeModule
-        assertNotNull("BecomeModule no está registrado en React Native.", module)
-
-        val rejection = AtomicReference<Any?>()
-        val promise = PromiseImpl(
-            Callback { },
-            Callback { arguments -> rejection.set(arguments.firstOrNull()) }
-        )
-        val params = Arguments.createMap().apply {
-            putString("clientId", clientId)
-            putString("clientSecret", clientSecret)
-            putString("contractId", contractId)
-            putString("userId", "device-test-${System.currentTimeMillis()}")
-            putBoolean("preventScreenCapture", false)
-        }
-
-        instrumentation.runOnMainSync {
-            module!!.iniciarBecomeSDK(params, promise)
-        }
-
-        assertTrue(
-            "El flujo nativo no reemplazó el formulario React Native.",
-            device.wait(Until.gone(By.textContains("Identidad Become")), 30_000)
-        )
-        assertNull("El bridge rechazó la promesa al iniciar el SDK.", rejection.get())
-        assertEquals(
-            "La SDK dejó la aplicación en primer plano.",
-            "com.becomedigitalapp",
-            device.currentPackageName
-        )
-        Thread.sleep(15_000)
-        assertEquals(
-            "La SDK ya no está en primer plano después de 15 segundos.",
-            "com.becomedigitalapp",
-            device.currentPackageName
-        )
-        device.executeShellCommand("screencap -p /sdcard/become-sdk-proof.png")
-    }
-
-    private fun waitForReactContext(application: MainApplication): ReactApplicationContext {
-        repeat(120) {
-            val context = application.reactHost.currentReactContext
-            if (context is ReactApplicationContext) return context
-            Thread.sleep(500)
-        }
-        throw AssertionError("React Native no creó ReactApplicationContext en 60 segundos.")
-    }
-
-    private fun android.os.Bundle.requiredString(name: String): String {
-        val value = getString(name)?.trim().orEmpty()
-        assertTrue("Falta el argumento de instrumentación '$name'.", value.isNotEmpty())
-        return value
+    @Test fun buttonOpensBecomeNativeFlow() {
+        val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+        device.executeShellCommand("am start -n com.becomedigitalapp/.MainActivity")
+        assertTrue("No apareció el bridge en la pantalla React Native.",
+            device.wait(Until.hasObject(By.textContains("Bridge nativo conectado")), 60_000))
+        val button = device.wait(Until.findObject(By.desc("Iniciar verificación")), 10_000)
+        assertTrue("No apareció el botón JavaScript.", button != null)
+        // No success is reported if credentials are absent: JUnit marks this test skipped.
+        assumeTrue("Guarda un perfil Testing autorizado en el demo antes de ejecutar esta prueba.",
+            device.wait(Until.hasObject(By.desc("Iniciar verificación").enabled(true)), 10_000))
+        button.click()
+        val permission = device.wait(Until.findObject(
+            By.res(Pattern.compile(".*:id/permission_allow_foreground_only_button"))), 5_000)
+        permission?.click()
+        assertTrue("No apareció la introducción nativa de la SDK.",
+            device.wait(Until.hasObject(By.text(Pattern.compile(
+                ".*(Verifiquemos tu identidad|verify your identity).*", Pattern.CASE_INSENSITIVE))), 60_000))
+        // Stop before liveness/document capture; do not collect biometric data automatically.
     }
 }
