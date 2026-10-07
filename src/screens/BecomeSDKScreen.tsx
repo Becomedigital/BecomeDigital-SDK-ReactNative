@@ -1,12 +1,10 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   ActivityIndicator,
   Alert,
   Keyboard,
   KeyboardAvoidingView,
-  PermissionsAndroid,
   Platform,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -18,17 +16,21 @@ import {
   KeyboardTypeOptions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import BecomeModule, {
+  bridgeDisponible,
+  errorDeSDK,
   BecomeSDKParams,
   BecomeSDKResult,
 } from '../types/BecomeModule';
 
 // ─── Result state types ────────────────────────────────────────────────────
-type VerificationStatus = 'idle' | 'loading' | 'success' | 'error' | 'cancelled';
+type VerificationStatus = 'idle' | 'loading' | 'success' | 'pending' | 'error' | 'cancelled';
 
 interface ResultState {
   status: VerificationStatus;
   data?: BecomeSDKResult;
+  errorCode?: string;
   errorMessage?: string;
 }
 
@@ -38,6 +40,13 @@ const BecomeSDKScreen = () => {
   const [clientSecret, setClientSecret] = useState('');
   const [contractId, setContractId]     = useState('');
   const [result, setResult]             = useState<ResultState>({status: 'idle'});
+  const scrollRef = useRef<ScrollView>(null);
+  const busyRef = useRef(false);
+  const bridgeReady = bridgeDisponible();
+  const hasSdkError = result.status === 'error' || result.status === 'cancelled';
+  const sdkErrorText = hasSdkError
+    ? `${result.errorCode ?? 'UNKNOWN_ERROR'}: ${result.errorMessage ?? 'Sin detalle devuelto por la SDK.'}`
+    : '';
 
   // Load testing profile on mount
   useEffect(() => {
@@ -49,55 +58,16 @@ const BecomeSDKScreen = () => {
     clientSecret.trim() !== '' &&
     contractId.trim() !== '';
 
-  const requestCameraPermission = async (): Promise<boolean> => {
-    if (Platform.OS !== 'android') return true;
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.CAMERA,
-        {
-          title: 'Permiso de Cámara',
-          message: 'La verificación de identidad necesita acceso a tu cámara para capturar documentos y validar tu identidad.',
-          buttonPositive: 'Permitir',
-          buttonNegative: 'Cancelar',
-        },
-      );
-      const granted2 = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE,
-        {
-          title: 'Permiso de Almacenamiento',
-          message: 'La verificación necesita acceso al almacenamiento para procesar los documentos.',
-          buttonPositive: 'Permitir',
-          buttonNegative: 'Cancelar',
-        },
-      );
-      const cameraOk = granted === PermissionsAndroid.RESULTS.GRANTED;
-      console.log('[BecomeSDK] Permiso CAMERA:', granted);
-      console.log('[BecomeSDK] Permiso READ_EXTERNAL_STORAGE:', granted2);
-      return cameraOk;
-    } catch (err) {
-      console.log('[BecomeSDK] Error solicitando permisos:', err);
-      return false;
-    }
-  };
-
   const handleStartVerification = async () => {
+    if (busyRef.current) return;
     if (!isFormValid) {
       Alert.alert('Campos incompletos', 'Por favor complete todos los campos antes de continuar.');
       return;
     }
 
+    // Lock synchronously, including the time spent in the permission dialog.
+    busyRef.current = true;
     Keyboard.dismiss();
-
-    // Solicitar permisos de cámara ANTES de llamar al SDK
-    const hasPermission = await requestCameraPermission();
-    if (!hasPermission) {
-      Alert.alert(
-        'Permiso requerido',
-        'La verificación de identidad requiere acceso a la cámara. Por favor, concede el permiso en Ajustes > Aplicaciones.',
-      );
-      return;
-    }
-
     setResult({status: 'loading'});
 
     // Auto-generate random userId per request
@@ -108,35 +78,22 @@ const BecomeSDKScreen = () => {
       clientSecret: clientSecret.trim(),
       contractId: contractId.trim(),
       userId: generatedUserId,
+      // The native demo apps allow screen capture to simplify manual QA.
+      preventScreenCapture: false,
     };
 
-    console.log('[BecomeSDK] ▶ Iniciando verificación...');
-    console.log('[BecomeSDK]   clientId    =', params.clientId);
-    console.log('[BecomeSDK]   contractId  =', params.contractId);
-    console.log('[BecomeSDK]   userId      =', params.userId);
-    console.log('[BecomeSDK]   clientSecret length =', params.clientSecret.length);
-
     try {
-      console.log('[BecomeSDK] ▶ Llamando BecomeModule.iniciarBecomeSDK()...');
       const response = await BecomeModule.iniciarBecomeSDK(params);
-      console.log('[BecomeSDK] ✓ Respuesta recibida:', JSON.stringify(response));
-      setResult({status: 'success', data: response});
-    } catch (error: any) {
-      console.log('[BecomeSDK] ✗ Error capturado en JS:');
-      console.log('[BecomeSDK]   error.code    =', error?.code);
-      console.log('[BecomeSDK]   error.message =', error?.message);
-      console.log('[BecomeSDK]   error (full)  =', JSON.stringify(error));
-
-      if (error?.code === 'USER_CANCELLED') {
-        console.log('[BecomeSDK]   → Usuario canceló el flujo');
-        setResult({status: 'cancelled'});
-      } else {
-        console.log('[BecomeSDK]   → Error de SDK o nativo');
-        setResult({
-          status: 'error',
-          errorMessage: error?.message ?? 'Error desconocido.',
-        });
-      }
+      setResult({status: response.status === 'PENDING' ? 'pending' : 'success', data: response});
+    } catch (error) {
+      const {code: errorCode, message: errorMessage} = errorDeSDK(error);
+      setResult({
+        status: errorCode === 'USER_CANCELLED' ? 'cancelled' : 'error',
+        errorCode,
+        errorMessage,
+      });
+    } finally {
+      busyRef.current = false;
     }
   };
 
@@ -150,7 +107,7 @@ const BecomeSDKScreen = () => {
       await AsyncStorage.setItem('testing_clientSecret', clientSecret.trim());
       await AsyncStorage.setItem('testing_contractId', contractId.trim());
       Alert.alert('Éxito', 'Conexión de Testing guardada correctamente.');
-    } catch (e) {
+    } catch {
       Alert.alert('Error', 'No se pudo guardar la conexión.');
     }
   };
@@ -164,13 +121,13 @@ const BecomeSDKScreen = () => {
       if (savedClientId) setClientId(savedClientId);
       if (savedClientSecret) setClientSecret(savedClientSecret);
       if (savedContractId) setContractId(savedContractId);
-    } catch (e) {
-      console.log('Error loading testing connection', e);
+    } catch {
+      Alert.alert('Configuración local', 'No fue posible cargar el perfil de pruebas.');
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
       <StatusBar barStyle="light-content" backgroundColor={COLORS.bg} />
 
       <KeyboardAvoidingView
@@ -178,9 +135,13 @@ const BecomeSDKScreen = () => {
         style={styles.flex}>
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => {
+              if (hasSdkError) scrollRef.current?.scrollToEnd({animated: true});
+            }}>
 
             {/* ── Header ── */}
             <View style={styles.headerContainer}>
@@ -193,6 +154,9 @@ const BecomeSDKScreen = () => {
               <Text style={styles.subtitle}>
                 Por favor, ingrese sus credenciales para iniciar el proceso de
                 validación biométrica y documental.
+              </Text>
+              <Text testID="bridge-status" style={styles.subtitle}>
+                {bridgeReady ? '✓ Bridge nativo conectado' : 'Falta registrar BecomeModule. Recompila la app.'}
               </Text>
             </View>
 
@@ -229,23 +193,27 @@ const BecomeSDKScreen = () => {
 
             {/* ── Saved Connections Actions ── */}
             <View style={styles.savedConnectionsRow}>
-              <TouchableOpacity style={styles.testingBtn} onPress={handleLoadConnection}>
+              <TouchableOpacity style={styles.testingBtn} onPress={handleLoadConnection} disabled={result.status === 'loading'}>
                 <Text style={styles.testingBtnText}>🔄 Cargar Testing</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.testingBtn} onPress={handleSaveConnection}>
+              <TouchableOpacity style={styles.testingBtn} onPress={handleSaveConnection} disabled={result.status === 'loading'}>
                 <Text style={styles.testingBtnText}>💾 Guardar Testing</Text>
               </TouchableOpacity>
             </View>
 
             {/* ── CTA Button ── */}
             <TouchableOpacity
+              testID="launch-sdk"
+              accessibilityRole="button"
+              accessibilityLabel="Iniciar verificación"
+              accessibilityState={{disabled: !isFormValid || !bridgeReady || result.status === 'loading', busy: result.status === 'loading'}}
               style={[
                 styles.ctaButton,
-                (!isFormValid || result.status === 'loading') && styles.ctaButtonDisabled,
+                (!isFormValid || !bridgeReady || result.status === 'loading') && styles.ctaButtonDisabled,
               ]}
               onPress={handleStartVerification}
               activeOpacity={0.85}
-              disabled={!isFormValid || result.status === 'loading'}>
+              disabled={!isFormValid || !bridgeReady || result.status === 'loading'}>
               {result.status === 'loading' ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator color="#fff" size="small" />
@@ -255,6 +223,15 @@ const BecomeSDKScreen = () => {
                 <Text style={styles.ctaButtonText}>🛡️  Iniciar Verificación</Text>
               )}
             </TouchableOpacity>
+
+            {hasSdkError && (
+              <View style={styles.sdkErrorContainer}>
+                <Text style={styles.sdkErrorLabel}>Error devuelto por la SDK</Text>
+                <Text testID="sdk-error" style={styles.sdkErrorValue} selectable accessibilityLiveRegion="polite">
+                  {sdkErrorText}
+                </Text>
+              </View>
+            )}
 
             {/* ── Result Panel ── */}
             {result.status !== 'idle' && result.status !== 'loading' && (
@@ -297,6 +274,8 @@ const FormField = ({
   <View style={[styles.fieldWrapper, isLast && styles.fieldWrapperLast]}>
     <Text style={styles.fieldLabel}>{icon}  {label}</Text>
     <TextInput
+      accessibilityLabel={label}
+      testID={label === 'Client ID' ? 'client-id' : label === 'Client Secret' ? 'client-secret' : 'contract-id'}
       style={[styles.textInput, !editable && styles.textInputDisabled]}
       placeholder={placeholder}
       placeholderTextColor={COLORS.placeholder}
@@ -318,9 +297,8 @@ interface ResultPanelProps {
 
 const ResultPanel = ({result, onReset}: ResultPanelProps) => {
   const isSuccess   = result.status === 'success';
+  const isPending   = result.status === 'pending';
   const isError     = result.status === 'error';
-  const isCancelled = result.status === 'cancelled';
-
   const config = {
     success: {
       icon: '✅',
@@ -331,6 +309,15 @@ const ResultPanel = ({result, onReset}: ResultPanelProps) => {
       titleStyle: styles.resultTitleSuccess,
       badge: styles.badgeSuccess,
       badgeText: 'VERIFICADO',
+    },
+    pending: {
+      icon: '⏳',
+      title: 'Verificación pendiente',
+      message: result.data?.message ?? 'El resultado todavía está en proceso.',
+      cardStyle: styles.resultCardCancelled,
+      titleStyle: styles.resultTitleCancelled,
+      badge: styles.badgeCancelled,
+      badgeText: 'PENDIENTE',
     },
     error: {
       icon: '❌',
@@ -353,7 +340,7 @@ const ResultPanel = ({result, onReset}: ResultPanelProps) => {
     },
   };
 
-  const current = isSuccess ? config.success : isError ? config.error : config.cancelled;
+  const current = isPending ? config.pending : isSuccess ? config.success : isError ? config.error : config.cancelled;
 
   return (
     <View style={[styles.resultCard, current.cardStyle]}>
@@ -364,7 +351,7 @@ const ResultPanel = ({result, onReset}: ResultPanelProps) => {
             {current.title}
           </Text>
           <View style={[styles.badge, current.badge]}>
-            <Text style={styles.badgeLabel}>{current.badgeText}</Text>
+            <Text testID="sdk-status" style={styles.badgeLabel}>{current.badgeText}</Text>
           </View>
         </View>
       </View>
@@ -373,7 +360,7 @@ const ResultPanel = ({result, onReset}: ResultPanelProps) => {
 
       <Text style={styles.resultMessage}>{current.message}</Text>
 
-      {isSuccess && result.data && (
+      {(isSuccess || isPending) && result.data && (
         <View style={styles.resultDataGrid}>
           {result.data.requestId && (
             <DataRow label="Request ID" value={result.data.requestId} />
@@ -541,6 +528,27 @@ const styles = StyleSheet.create({
   loadingRow: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+
+  // Native SDK error, shown separately so testers can copy its code and message.
+  sdkErrorContainer: {
+    backgroundColor: COLORS.errorBg,
+    borderColor: COLORS.danger,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 16,
+  },
+  sdkErrorLabel: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  sdkErrorValue: {
+    color: COLORS.text,
+    fontSize: 14,
+    lineHeight: 20,
   },
 
   // Saved Connections Buttons

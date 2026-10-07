@@ -20,7 +20,19 @@
 		BB9FACFE2F66290600AC371A /* FaceLiveness in Frameworks */ = {isa = PBXBuildFile; productRef = BB9FACFD2F66290600AC371A /* FaceLiveness */; };
 		BBCC86812F68A9C200FE2E81 /* BDIdentityVerification.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBCC86802F68A9C200FE2E81 /* BDIdentityVerification.xcframework */; };
 		BBCC86822F68A9C200FE2E81 /* BDIdentityVerification.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BBCC86802F68A9C200FE2E81 /* BDIdentityVerification.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		E45D3B02EB4F11C17FDC35F7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2E409BC99EBA9623E09A6D1 /* Foundation.framework */; };
+		F5518666DF0CAE6B9110D746 /* BridgeLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F44BA9A26FB6F82C0CF5C90 /* BridgeLaunchTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F28A498381966F530481F44A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 13B07F861A680F5B00A75B9A;
+			remoteInfo = BecomeDigitalApp;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		2F421005D91E4A7100D00001 /* Embed Frameworks */ = {
@@ -46,10 +58,13 @@
 		3B4392A12AC88292D35C810B /* Pods-BecomeDigitalApp.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BecomeDigitalApp.debug.xcconfig"; path = "Target Support Files/Pods-BecomeDigitalApp/Pods-BecomeDigitalApp.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-BecomeDigitalApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BecomeDigitalApp.release.xcconfig"; path = "Target Support Files/Pods-BecomeDigitalApp/Pods-BecomeDigitalApp.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-BecomeDigitalApp.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-BecomeDigitalApp.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6F44BA9A26FB6F82C0CF5C90 /* BridgeLaunchTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BridgeLaunchTests.swift; path = BecomeDigitalAppUITests/BridgeLaunchTests.swift; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = BecomeDigitalApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = BecomeDigitalApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		BB2321482F664A01005E9EAA /* com.become.document.key.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = com.become.document.key.txt; sourceTree = "<group>"; };
 		BBCC86802F68A9C200FE2E81 /* BDIdentityVerification.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BDIdentityVerification.xcframework; path = BecomeDigitalApp/Frameworks/BDIdentityVerification.xcframework; sourceTree = "<group>"; };
+		D2E409BC99EBA9623E09A6D1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
+		D609514B4AB7F8945B682BD3 /* BecomeDigitalAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BecomeDigitalAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -63,6 +78,14 @@
 				BB2321452F66490B005E9EAA /* CaptureCore in Frameworks */,
 				BB2321422F66488E005E9EAA /* CaptureUX in Frameworks */,
 				BB9FACFE2F66290600AC371A /* FaceLiveness in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D41709E165304ADD7F9F1CA0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E45D3B02EB4F11C17FDC35F7 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -90,6 +113,7 @@
 				BBCC86802F68A9C200FE2E81 /* BDIdentityVerification.xcframework */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-BecomeDigitalApp.a */,
+				8E7B7006652E51BFBFF4A942 /* iOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -109,6 +133,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				6F44BA9A26FB6F82C0CF5C90 /* BridgeLaunchTests.swift */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -119,8 +144,17 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* BecomeDigitalApp.app */,
+				D609514B4AB7F8945B682BD3 /* BecomeDigitalAppUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		8E7B7006652E51BFBFF4A942 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				D2E409BC99EBA9623E09A6D1 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 		BB2321462F664966005E9EAA /* Application */ = {
@@ -173,6 +207,24 @@
 			productReference = 13B07F961A680F5B00A75B9A /* BecomeDigitalApp.app */;
 			productType = "com.apple.product-type.application";
 		};
+		3F131765B11C46FFF633091D /* BecomeDigitalAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0CEF1800403D49486C2ACBC1 /* Build configuration list for PBXNativeTarget "BecomeDigitalAppUITests" */;
+			buildPhases = (
+				0590E84825CF7217C713CBCD /* Sources */,
+				D41709E165304ADD7F9F1CA0 /* Frameworks */,
+				0E2C730D39282566E6C2E2D4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				9A9F946A075752D3699ABC8A /* PBXTargetDependency */,
+			);
+			name = BecomeDigitalAppUITests;
+			productName = BecomeDigitalAppUITests;
+			productReference = D609514B4AB7F8945B682BD3 /* BecomeDigitalAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -183,6 +235,10 @@
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
 						LastSwiftMigration = 1120;
+					};
+					3F131765B11C46FFF633091D = {
+						ProvisioningStyle = Automatic;
+						TestTargetID = 13B07F861A680F5B00A75B9A;
 					};
 				};
 			};
@@ -206,11 +262,19 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* BecomeDigitalApp */,
+				3F131765B11C46FFF633091D /* BecomeDigitalAppUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		0E2C730D39282566E6C2E2D4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		13B07F8E1A680F5B00A75B9A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -300,6 +364,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		0590E84825CF7217C713CBCD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F5518666DF0CAE6B9110D746 /* BridgeLaunchTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		13B07F871A680F5B00A75B9A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -312,7 +384,39 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		9A9F946A075752D3699ABC8A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = BecomeDigitalApp;
+			target = 13B07F861A680F5B00A75B9A /* BecomeDigitalApp */;
+			targetProxy = F28A498381966F530481F44A /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		09D1E34F1F2925F540E953E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9FBDU3DDSJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.becomedigital.sdk.identity.verification.finger.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BecomeDigitalApp;
+			};
+			name = Debug;
+		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 3B4392A12AC88292D35C810B /* Pods-BecomeDigitalApp.debug.xcconfig */;
@@ -529,9 +633,42 @@
 			};
 			name = Release;
 		};
+		C1E61D4874E2C1F60CAB1E21 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = 9FBDU3DDSJ;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.becomedigital.sdk.identity.verification.finger.ios.uitests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = BecomeDigitalApp;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0CEF1800403D49486C2ACBC1 /* Build configuration list for PBXNativeTarget "BecomeDigitalAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C1E61D4874E2C1F60CAB1E21 /* Release */,
+				09D1E34F1F2925F540E953E5 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "BecomeDigitalApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -557,32 +694,32 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/BlinkID/capture-ux-sp";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = exactVersion;
+				version = 1.4.3;
 			};
 		};
 		BB2321432F66490B005E9EAA /* XCRemoteSwiftPackageReference "capture-core-sp" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/BlinkID/capture-core-sp";
 			requirement = {
-				branch = main;
-				kind = branch;
+				kind = exactVersion;
+				version = 1.4.3;
 			};
 		};
 		BB9FACFB2F66285600AC371A /* XCRemoteSwiftPackageReference "amplify-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/aws-amplify/amplify-swift";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 2.45.4;
+				kind = exactVersion;
+				version = 2.53.3;
 			};
 		};
 		BB9FACFC2F66290600AC371A /* XCRemoteSwiftPackageReference "amplify-ui-swift-liveness" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/aws-amplify/amplify-ui-swift-liveness";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 1.3.4;
+				kind = exactVersion;
+				version = 1.4.4;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
