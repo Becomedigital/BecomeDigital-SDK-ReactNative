@@ -1,0 +1,8 @@
+android/build/
+android/app/build/
+ios/build/
+ios/DerivedData/
+ios/Pods/
+node_modules/
+vendor/
+artifacts/

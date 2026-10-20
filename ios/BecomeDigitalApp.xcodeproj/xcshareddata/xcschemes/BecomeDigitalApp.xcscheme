@@ -23,7 +23,7 @@
       </BuildActionEntries>
    </BuildAction>
    <TestAction
-      buildConfiguration = "Debug"
+      buildConfiguration = "Release"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       shouldUseLaunchSchemeArgsEnv = "YES">
@@ -32,9 +32,9 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "00E356ED1AD99517003FC87E"
-               BuildableName = "BecomeDigitalAppTests.xctest"
-               BlueprintName = "BecomeDigitalAppTests"
+               BlueprintIdentifier = "3F131765B11C46FFF633091D"
+               BuildableName = "BecomeDigitalAppUITests.xctest"
+               BlueprintName = "BecomeDigitalAppUITests"
                ReferencedContainer = "container:BecomeDigitalApp.xcodeproj">
             </BuildableReference>
          </TestableReference>

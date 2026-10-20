@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Network connection, read and write timeout used by Become Digital SDK. -->
+    <integer name="timeOut">180</integer>
+</resources>
