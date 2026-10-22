@@ -1,6 +1,6 @@
-# Versiones y artefactos de la integración
+# Integration versions and artifacts
 
-Este registro identifica la configuración del ejemplo; no implica compatibilidad universal ni una autorización de redistribución. Solicite al proveedor artefactos y licencias autorizados para su contrato y los identificadores de su app.
+This record identifies the demo configuration; it does not imply universal compatibility or authorization to redistribute an SDK. Obtain authorized artifacts and licenses for the contract, app identifiers, and environment. For native dependency and license requirements, use the [Android AutoCaptureOCR SDK](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-Android) and [iOS AutoCaptureOCR SDK](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS) integration guides.
 
 | Componente | Configuración |
 | --- | --- |
@@ -12,13 +12,15 @@ Este registro identifica la configuración del ejemplo; no implica compatibilida
 | Kotlin / plugin Compose | 2.2.10 / 2.2.10 |
 | Android NDK | 27.1.12297006 |
 | Ruby de referencia / CocoaPods / xcodeproj | 3.2.2 / 1.16.2 / 1.27.0 |
-| iOS deployment target | 15.6 |
+| AutoCaptureOCR iOS minimum deployment target | 16.0 |
 | Xcode usado para la validación local | 27.0 (27A266a) |
-| amplify-swift | 2.53.3 exacta |
-| amplify-ui-swift-liveness | 1.4.4 exacta |
-| capture-core-sp / capture-ux-sp | 1.4.3 / 1.4.3 exactas |
+| Become iOS framework | 1.2.3 |
+| Amplify Swift | 2.53.3 |
+| Amplify UI Face Liveness | 1.4.4 |
+| BlinkID Core / UX | 8002.0.2 |
+| iOS native UI | SwiftUI |
 
-Las dependencias Android completas están en `android/app/build.gradle`; no copie solamente el AAR. En iOS conserve los archivos `Package.resolved` y `Podfile.lock`, además de los productos, recursos y ajustes del proyecto.
+Use the Android native guide for its complete Gradle dependencies; do not copy only the AAR. On iOS, keep `Package.resolved` and `Podfile.lock` with the project, in addition to the required products, resources, and target settings. The AutoCaptureOCR iOS dependency set requires iOS 16.0+, not the older deployment target recorded by prior bridge examples.
 
 ## Binarios de referencia
 
@@ -33,7 +35,7 @@ Puede comprobarlos con `shasum -a 256 RUTA_DEL_ARCHIVO`. El segundo hash identif
 
 ## Antes de redistribuir
 
-- Revise la autorización para publicar la SDK y los recursos licenciados existentes (`com.become.mb.key` y `com.become.document.key.txt`). Que ya estén versionados no demuestra permiso para reutilizarlos en otra app.
+- Confirm authorization to distribute the SDK and licensed resources (`com.become.blinkid.key` for Android and `com.become.blinkid.key.txt` for iOS). Existing files in this repository do not demonstrate permission to reuse them in another app.
 - No agregue claves de firma de distribución, credenciales de cliente, perfiles Testing, datos personales ni artefactos de pruebas.
 - `.gitignore` evita añadir nuevos archivos locales por accidente, pero no retira archivos ya versionados ni elimina secretos del historial.
 - El demo usa firma Android debug generada localmente; no sirve como política de firma de una aplicación de producción.

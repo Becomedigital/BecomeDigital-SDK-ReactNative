@@ -1,14 +1,24 @@
-# Integrar Become Digital en el proyecto iOS de una app React Native
+# Integrating Become Digital into an iOS React Native project
 
-Para invocar la SDK desde JavaScript, primero debe integrarla en el target iOS y después registrar un módulo nativo que exponga su flujo a React Native. Este directorio contiene un ejemplo de ambas piezas. La [guía principal](../README.md) explica el recorrido completo para Android e iOS.
+To call the SDK from JavaScript, first integrate it into the iOS app target and then register a native module that exposes its flow to React Native. This directory contains a bridge example. The [main guide](../README.md) describes the Android and iOS integration paths.
 
-## Paso 1 Añadir la SDK y sus recursos al target
+## Step 1: add the AutoCaptureOCR SDK and resources to the target
 
-1. Agregue su `BDIdentityVerification.xcframework` autorizado al target de la app en Xcode y seleccione **Embed & Sign**. El ejemplo lo guarda en [`BecomeDigitalApp/Frameworks/`](BecomeDigitalApp/Frameworks/).
-2. Agregue `com.become.document.key.txt` a **Copy Bundle Resources** para que quede dentro del bundle. En este repositorio está en `Application/Resources/`. Use la licencia entregada para su integración.
-3. Declare `NSCameraUsageDescription` y `NSMicrophoneUsageDescription` en `Info.plist` con textos adecuados para su app. Puede comparar con [el archivo del ejemplo](BecomeDigitalApp/Info.plist).
-4. Agregue los paquetes Swift requeridos por la SDK. El [proyecto de ejemplo](BecomeDigitalApp.xcodeproj/project.pbxproj) fija versiones **exactas**: `amplify-swift` 2.53.3, `amplify-ui-swift-liveness` 1.4.4, `capture-core-sp` 1.4.3 y `capture-ux-sp` 1.4.3. Los productos enlazados directamente al target son `FaceLiveness`, `CaptureCore` y `CaptureUX`. Mantenga `Package.resolved` junto con el proyecto; cambiar versiones requiere volver a validar la integración.
-5. Mantenga la configuración de React Native y CocoaPods de su app. El [`Podfile` del ejemplo](Podfile) es una referencia, no un archivo que deba reemplazar al suyo. Verifique también el deployment target y la firma del target para instalarlo en dispositivos físicos.
+Use the [AutoCaptureOCR iOS SDK integration guide](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS) as the source of truth for framework distribution, dependencies, licenses, supported app identifiers, and migration instructions.
+
+1. Set the app deployment target to **iOS 16.0 or later**. The current native SDK uses a SwiftUI interface.
+2. Add the authorized `BDIdentityVerification.xcframework` to the app target in Xcode and select **Embed & Sign**. The framework version is **1.2.3**.
+3. Add the BlinkID license supplied for your Bundle ID and environment to **Copy Bundle Resources**. The current native guide uses `com.become.blinkid.key.txt`. Do not copy a license between app identifiers or environments.
+4. Declare `NSCameraUsageDescription` in `Info.plist` using text appropriate for the app. See the [example file](BecomeDigitalApp/Info.plist) for the required iOS key. Add location permission only when the app’s own flow requires it.
+5. Add these Swift Package Manager dependencies at the exact native-SDK versions, and retain `Package.resolved` with the project:
+
+   | Package | Version | Product added to the app target |
+   | --- | --- | --- |
+   | `amplify-swift` | 2.53.3 | Required Amplify products |
+   | `amplify-ui-swift-liveness` | 1.4.4 | `FaceLiveness` |
+   | `blinkid-ios` | 8002.0.2 | `BlinkIDUX` (which brings in BlinkID Core) |
+
+6. If migrating from Capture Core/UX, remove the previous Capture Core and Capture UX package references and linked products before adding BlinkID Core/UX. Keep the existing React Native and CocoaPods configuration for the app; this repository’s [`Podfile`](Podfile) is a reference, not a replacement for an app’s Podfile. Changing a framework or package version requires a new native validation.
 
 ## Paso 2 Incorporar y exportar el bridge
 
@@ -48,4 +58,4 @@ El callback `application(_:handleEventsForBackgroundURLSession:completionHandler
 
 ## Pruebas
 
-El target `BecomeDigitalAppUITests` verifica la presencia del bridge y usa el botón JavaScript para abrir la introducción nativa. Requiere iOS 17 o superior por el runtime XCTest de Xcode 27; no cambia el mínimo iOS 15.6 de la app. El esquema usa Release para las pruebas, evitando depender de Metro. La prueba de apertura necesita un perfil Testing guardado manualmente y un teléfono desbloqueado; se marca omitida si no hay perfil, no como validación del flujo. No realiza captura biométrica. Consulte [VALIDACION.md](../docs/VALIDACION.md) para comandos y alcance.
+The `BecomeDigitalAppUITests` target verifies bridge availability and uses the JavaScript button to open the native introduction. It requires iOS 17 or later because of the Xcode 27 XCTest runtime. This does not lower the AutoCaptureOCR SDK requirement: the app target must remain iOS 16.0 or later. The scheme uses Release, avoiding a Metro dependency. The opening test requires a manually saved Testing profile and an unlocked phone; it is skipped when no profile exists and does not validate the biometric flow. See [VALIDACION.md](../docs/VALIDACION.md) for commands and scope.

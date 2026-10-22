@@ -2,13 +2,16 @@
 
 La SDK de Become Digital funciona de forma nativa en Android e iOS. Una app React Native no puede llamarla directamente desde JavaScript: necesita un **bridge** en cada plataforma. Este repositorio es una app de ejemplo con esos bridges implementados; no es un paquete NPM que se instale automáticamente en otra app.
 
-Esta guía explica qué piezas trasladar a su proyecto, cómo conectarlas y cómo manejar la respuesta. Para las dependencias y licencias de la SDK nativa, consulte también las [instrucciones de Android](https://github.com/Becomedigital/BecomeDigitalSDKAutDirectPro-Android) y las [instrucciones de iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutDirectPro-iOS).
+Esta guía explica qué piezas trasladar a su proyecto, cómo conectarlas y cómo manejar la respuesta. For native SDK dependencies, licenses, supported environments, and migration guidance, use the current native integration repositories:
+
+- [Android AutoCaptureOCR SDK](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-Android)
+- [iOS AutoCaptureOCR SDK](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS)
 
 ## Antes de comenzar
 
 - Necesita una app React Native con proyectos nativos `android/` e `ios/` y acceso a sus compilaciones.
 - Solicite a Become Digital la SDK, las licencias y las credenciales correspondientes a su integración. No copie credenciales de prueba al código ni registre `clientSecret` en logs.
-- Este ejemplo usa React Native 0.84.1, Node.js 22.11 o superior, Java 17 y `minSdkVersion` 24 en Android, e iOS 15.6 como deployment target del target principal. Si su app usa otras versiones, valide la compatibilidad de sus dependencias nativas antes de trasladar la configuración.
+- This example uses React Native 0.84.1, Node.js 22.11 or later, Java 17, and Android `minSdkVersion` 24. The current AutoCaptureOCR iOS SDK requires iOS 16.0 or later and a SwiftUI-based native interface; set your app deployment target accordingly before integrating it. Validate native dependency compatibility before copying this configuration into an app that uses different versions.
 - Es un módulo nativo clásico usado mediante la interoperabilidad de la Nueva Arquitectura de React Native, no un TurboModule generado. No funciona en Expo Go: necesita una compilación nativa propia. No se ha certificado una matriz de otras versiones de React Native.
 - Confirme con Become Digital los identificadores autorizados por sus licencias. El demo usa `com.becomedigitalapp` en Android y `com.becomedigital.sdk.identity.verification.finger.ios` en iOS. Cambiar estos identificadores puede requerir licencias nuevas; una licencia de la SDK no es una llave de firma o distribución.
 
@@ -62,7 +65,9 @@ Los dos módulos nativos deben exportar el mismo nombre, `BecomeModule`, y el mi
 
 ### Android
 
-En el ejemplo, el AAR está en [`android/app/libs/becomedigitalsdk.aar`](android/app/libs/becomedigitalsdk.aar) y la licencia en `android/app/src/main/assets/com.become.mb.key`. En su app, coloque los artefactos y la licencia autorizados para su contrato en las ubicaciones que indique la guía nativa.
+For a new Android AutoCaptureOCR integration, place the authorized AAR and BlinkID license where the native guide specifies. The current Android license filename is `app/src/main/assets/com.become.blinkid.key`; do not copy the legacy demo resource `com.become.mb.key` into a new integration.
+
+Use the [Android AutoCaptureOCR SDK guide](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-Android) as the source of truth for the AAR, BlinkID license, Gradle dependencies, supported versions, and required configuration. A license is tied to its authorized app identifiers and environment; do not reuse it for another app or variant.
 
 Revise [`android/app/build.gradle`](android/app/build.gradle) para las dependencias, repositorios, Compose, desugaring y opciones de compilación que necesita esta versión de la SDK. Revise [`android/app/src/main/AndroidManifest.xml`](android/app/src/main/AndroidManifest.xml) para los permisos declarados, especialmente cámara e Internet. El ejemplo también define un timeout de red en [`become_config.xml`](android/app/src/main/res/values/become_config.xml). Integre estos ajustes con los existentes en su app; no sustituya todo su archivo Gradle o manifest por el del demo. El demo usa la firma de depuración de Android también para compilaciones `release`; no incluye una llave de distribución. Configure la firma de producción por separado en su propia app.
 
@@ -70,7 +75,9 @@ Configure su Android SDK y `JAVA_HOME` en la máquina de desarrollo. Si necesita
 
 ### iOS
 
-Agregue `BDIdentityVerification.xcframework` al target de la app con **Embed & Sign** y el archivo de licencia `com.become.document.key.txt` a **Copy Bundle Resources**. Declare `NSCameraUsageDescription` y `NSMicrophoneUsageDescription` en `Info.plist`, incorpore los paquetes Swift que requiere la SDK y compruebe la firma del target para instalarlo en un iPhone.
+Add `BDIdentityVerification.xcframework` to the app target with **Embed & Sign** and add the authorized BlinkID license file to **Copy Bundle Resources**. Declare `NSCameraUsageDescription` in `Info.plist`, add the SDK’s Swift packages, and confirm target signing before installing on an iPhone.
+
+The current AutoCaptureOCR iOS integration requires iOS 16.0 or later, Become framework 1.2.3, BlinkID Core/UX 8002.0.2, Amplify Swift 2.53.3, Amplify UI Face Liveness 1.4.4, and a SwiftUI interface. Follow the [iOS AutoCaptureOCR SDK guide](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS) for the exact package products, license filename, and migration steps; it is the source of truth for native dependencies and licensing.
 
 La [guía iOS de este repositorio](ios/README_BECOME_IOS.md) identifica los archivos, paquetes y ajustes concretos del ejemplo. Úsela junto con la guía de la SDK nativa; las versiones de su app pueden requerir una resolución distinta.
 
