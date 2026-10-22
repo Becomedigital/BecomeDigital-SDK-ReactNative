@@ -1,24 +1,24 @@
-# Integrating Become Digital into an iOS React Native project
+# Integrar Become Digital en el proyecto iOS de una app React Native
 
-To call the SDK from JavaScript, first integrate it into the iOS app target and then register a native module that exposes its flow to React Native. This directory contains a bridge example. The [main guide](../README.md) describes the Android and iOS integration paths.
+Para invocar la SDK desde JavaScript, primero debe integrarla en el target iOS de la app y después registrar un módulo nativo que exponga su flujo a React Native. Este directorio contiene un ejemplo de bridge. La [guía principal](../README.md) describe la integración para Android e iOS.
 
-## Step 1: add the AutoCaptureOCR SDK and resources to the target
+## Paso 1 Añadir la SDK AutoCaptureOCR y sus recursos al target
 
-Use the [AutoCaptureOCR iOS SDK integration guide](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS) as the source of truth for framework distribution, dependencies, licenses, supported app identifiers, and migration instructions.
+Use la [guía de integración de la SDK AutoCaptureOCR para iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS) como referencia para la distribución del framework, las dependencias, las licencias, los identificadores de app compatibles y las instrucciones de migración.
 
-1. Set the app deployment target to **iOS 16.0 or later**. The current native SDK uses a SwiftUI interface.
-2. Add the authorized `BDIdentityVerification.xcframework` to the app target in Xcode and select **Embed & Sign**. The framework version is **1.2.3**.
-3. Add the BlinkID license supplied for your Bundle ID and environment to **Copy Bundle Resources**. The current native guide uses `com.become.blinkid.key.txt`. Do not copy a license between app identifiers or environments.
-4. Declare `NSCameraUsageDescription` in `Info.plist` using text appropriate for the app. See the [example file](BecomeDigitalApp/Info.plist) for the required iOS key. Add location permission only when the app’s own flow requires it.
-5. Add these Swift Package Manager dependencies at the exact native-SDK versions, and retain `Package.resolved` with the project:
+1. Configure la versión mínima de la app en **iOS 16.0 o posterior**. La SDK nativa actual usa una interfaz SwiftUI.
+2. Agregue el `BDIdentityVerification.xcframework` autorizado al target de la app en Xcode y seleccione **Embed & Sign**. La versión del framework es **1.2.3**.
+3. Agregue la licencia BlinkID entregada para su Bundle ID y ambiente a **Copy Bundle Resources**. La guía nativa actual usa `com.become.blinkid.key.txt`. No copie una licencia entre identificadores de app o ambientes distintos.
+4. Declare `NSCameraUsageDescription` en `Info.plist` con un texto adecuado para la app. Consulte el [archivo de ejemplo](BecomeDigitalApp/Info.plist) para identificar la clave requerida por iOS. Agregue el permiso de ubicación solo cuando el flujo de su app lo necesite.
+5. Agregue estas dependencias de Swift Package Manager con las versiones exactas que requiere la SDK nativa y conserve `Package.resolved` junto con el proyecto:
 
-   | Package | Version | Product added to the app target |
+   | Paquete | Versión | Producto agregado al target de la app |
    | --- | --- | --- |
-   | `amplify-swift` | 2.53.3 | Required Amplify products |
+   | `amplify-swift` | 2.53.3 | Productos de Amplify requeridos |
    | `amplify-ui-swift-liveness` | 1.4.4 | `FaceLiveness` |
-   | `blinkid-ios` | 8002.0.2 | `BlinkIDUX` (which brings in BlinkID Core) |
+   | `blinkid-ios` | 8002.0.2 | `BlinkIDUX` (que incorpora BlinkID Core) |
 
-6. If migrating from Capture Core/UX, remove the previous Capture Core and Capture UX package references and linked products before adding BlinkID Core/UX. Keep the existing React Native and CocoaPods configuration for the app; this repository’s [`Podfile`](Podfile) is a reference, not a replacement for an app’s Podfile. Changing a framework or package version requires a new native validation.
+6. Si migra desde Capture Core/UX, elimine las referencias anteriores a los paquetes Capture Core y Capture UX y sus productos enlazados antes de agregar BlinkID Core/UX. Conserve la configuración de React Native y CocoaPods de su app; el [`Podfile`](Podfile) de este repositorio es una referencia y no debe reemplazar al de su app. Cambiar la versión de un framework o paquete requiere volver a validar la integración nativa.
 
 ## Paso 2 Incorporar y exportar el bridge
 
@@ -58,4 +58,4 @@ El callback `application(_:handleEventsForBackgroundURLSession:completionHandler
 
 ## Pruebas
 
-The `BecomeDigitalAppUITests` target verifies bridge availability and uses the JavaScript button to open the native introduction. It requires iOS 17 or later because of the Xcode 27 XCTest runtime. This does not lower the AutoCaptureOCR SDK requirement: the app target must remain iOS 16.0 or later. The scheme uses Release, avoiding a Metro dependency. The opening test requires a manually saved Testing profile and an unlocked phone; it is skipped when no profile exists and does not validate the biometric flow. See [VALIDACION.md](../docs/VALIDACION.md) for commands and scope.
+El target `BecomeDigitalAppUITests` verifica la disponibilidad del bridge y usa el botón JavaScript para abrir la introducción nativa. Requiere iOS 17 o posterior por el entorno de ejecución de XCTest de Xcode 27. La SDK AutoCaptureOCR requiere que el target de la app tenga como mínimo iOS 16.0. El esquema usa Release para evitar depender de Metro. La prueba de apertura necesita un perfil Testing guardado manualmente y un teléfono desbloqueado; se omite si no hay perfil y no valida el flujo biométrico. Consulte [VALIDACION.md](../docs/VALIDACION.md) para conocer los comandos y su alcance.

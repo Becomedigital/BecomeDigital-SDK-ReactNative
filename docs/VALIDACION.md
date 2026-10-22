@@ -60,7 +60,7 @@ ANDROID_SERIAL=SERIAL ./gradlew :app:connectedDebugAndroidTest -PreactNativeArch
 
 Configure la firma del target app **y** del target `BecomeDigitalAppUITests`. Instale el demo con esa misma identidad, guarde un perfil Testing autorizado y deje el iPhone desbloqueado. Desde Xcode use **Product → Test**, o desde la raíz:
 
-The UI-test target requires iOS 17 or later because of Xcode 27 XCTest. The AutoCaptureOCR iOS SDK requires an iOS 16.0+ app target; devices below the runner minimum need a different supported test strategy.
+El target de pruebas de interfaz requiere iOS 17 o posterior por XCTest de Xcode 27. La SDK AutoCaptureOCR para iOS requiere que el target de la app tenga como mínimo iOS 16.0; los dispositivos con versiones anteriores al mínimo del ejecutor de pruebas necesitan otra estrategia de validación compatible.
 
 ```sh
 xcodebuild -workspace ios/BecomeDigitalApp.xcworkspace \
