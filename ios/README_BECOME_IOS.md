@@ -1,61 +1,52 @@
 # Integrar Become Digital en el proyecto iOS de una app React Native
 
-Para invocar la SDK desde JavaScript, primero debe integrarla en el target iOS de la app y después registrar un módulo nativo que exponga su flujo a React Native. Este directorio contiene un ejemplo de bridge. La [guía principal](../README.md) describe la integración para Android e iOS.
+Integre el producto nativo en el target iOS y registre el bridge que lo expone a JavaScript. La [guía principal](../README.md) explica la integración compartida y la [guía JWT](../docs/AUTENTICACION_JWT.md) detalla cómo recibir los tokens desde su backend.
 
-## Paso 1 Añadir la SDK AutoCaptureOCR y sus recursos al target
+## Paso 1 Agregar el paquete y la licencia
 
-Use la [guía de integración de la SDK AutoCaptureOCR para iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS) como referencia para la distribución del framework, las dependencias, las licencias, los identificadores de app compatibles y las instrucciones de migración.
+1. Configure iOS **16.0 o posterior** y use Xcode compatible con Swift 6.4.
+2. En **File > Add Package Dependencies**, agregue `https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS.git` con **Exact Version 5.3.2**.
+3. Agregue el producto **BDIdentityVerification** al target de su app. SPM resuelve el binario y sus dependencias.
+4. Si migra desde la distribución por archivo, retire el XCFramework local y sus productos enlazados anteriores. Conserve las dependencias que su propia app utiliza directamente. Siga la [instalación nativa](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS/blob/main/INSTALACION.md).
+5. Agregue la licencia `com.become.blinkid.key.txt` emitida para su Bundle ID al target y a **Copy Bundle Resources**.
+6. Declare `NSCameraUsageDescription` en `Info.plist`; agregue ubicación solo si el flujo de su app la requiere.
 
-1. Configure la versión mínima de la app en **iOS 16.0 o posterior**. La SDK nativa actual usa una interfaz SwiftUI.
-2. Agregue el `BDIdentityVerification.xcframework` autorizado al target de la app en Xcode y seleccione **Embed & Sign**. La versión del framework es **1.2.3**.
-3. Agregue la licencia BlinkID entregada para su Bundle ID y ambiente a **Copy Bundle Resources**. La guía nativa actual usa `com.become.blinkid.key.txt`. No copie una licencia entre identificadores de app o ambientes distintos.
-4. Declare `NSCameraUsageDescription` en `Info.plist` con un texto adecuado para la app. Consulte el [archivo de ejemplo](BecomeDigitalApp/Info.plist) para identificar la clave requerida por iOS. Agregue el permiso de ubicación solo cuando el flujo de su app lo necesite.
-5. Agregue estas dependencias de Swift Package Manager con las versiones exactas que requiere la SDK nativa y conserve `Package.resolved` junto con el proyecto:
-
-   | Paquete | Versión | Producto agregado al target de la app |
-   | --- | --- | --- |
-   | `amplify-swift` | 2.53.3 | Productos de Amplify requeridos |
-   | `amplify-ui-swift-liveness` | 1.4.4 | `FaceLiveness` |
-   | `blinkid-ios` | 8002.0.2 | `BlinkIDUX` (que incorpora BlinkID Core) |
-
-6. Si migra desde Capture Core/UX, elimine las referencias anteriores a los paquetes Capture Core y Capture UX y sus productos enlazados antes de agregar BlinkID Core/UX. Conserve la configuración de React Native y CocoaPods de su app; el [`Podfile`](Podfile) de este repositorio es una referencia y no debe reemplazar al de su app. Cambiar la versión de un framework o paquete requiere volver a validar la integración nativa.
+En este demo, coloque la licencia en `ios/Application/Resources/com.become.blinkid.key.txt`. La fase **Copiar licencia local** la incorpora si existe. El archivo está ignorado por Git y no se incluyen licencias nuevas en el repositorio. Puede compilar sin él, pero el inicio informa `MISSING_LICENSE_FILES`.
 
 ## Paso 2 Incorporar y exportar el bridge
 
-Agregue [`BecomeModule.swift`](BecomeDigitalApp/BecomeModule.swift) y [`BecomeModuleBridge.m`](BecomeDigitalApp/BecomeModuleBridge.m) al target de su app y compruebe que ambos aparecen en **Compile Sources**. No basta con copiar los archivos al directorio: Xcode debe compilarlos en el mismo target que usa React Native.
+Agregue [BecomeModule.swift](BecomeDigitalApp/BecomeModule.swift) y [BecomeModuleBridge.m](BecomeDigitalApp/BecomeModuleBridge.m) al target y a **Compile Sources**. Conserve los nombres `@objc(BecomeModule)` y `RCT_EXTERN_MODULE(BecomeModule, NSObject)`.
 
-La clase Swift marcada con `@objc(BecomeModule)` recibe los parámetros, comprueba los recursos necesarios, construye `BDIVConfig` y presenta la interfaz de la SDK. El archivo Objective-C usa `RCT_EXTERN_MODULE(BecomeModule, NSObject)` y `RCT_EXTERN_METHOD` para hacer visible `iniciarBecomeSDK` a `NativeModules.BecomeModule`. Mantenga iguales los nombres exportados en Swift, Objective-C y JavaScript.
+El método `iniciarBecomeSDK` recibe `jwt`, `verificationResultsJwt`, `contractId`, `userId` y la opción `preventScreenCapture`. Crea `BDIVConfig(jwt:...)`, asigna `verificationResultsJwt` y luego presenta la SDK. El ejemplo configura onboarding, DNI, pasaporte y consulta del resultado final.
 
-Antes de trasladar el código sin cambios, revise los tipos de documento, `customerLogo` y `customLocalizationFileName` que se pasan a `BDIVConfig`: deben corresponder con el flujo y los recursos de su propia app. El bridge del ejemplo conserva una promesa pendiente hasta recibir `BDIVDelegate` y devuelve el resultado o un error a JavaScript.
+El bridge exige los dos tokens sin `Bearer` y no permite mezclarlos con credenciales. También conserva la firma anterior con `clientId` y `clientSecret`, deprecada por la SDK, para integraciones existentes. No hay cambio automático entre ambos métodos cuando falla una verificación.
 
-## Paso 3 Compilar y llamar al módulo
+## Paso 3 Compilar y llamar desde JavaScript
 
-Desde la raíz de **su** proyecto, instale sus Pods según su configuración y abra el `.xcworkspace` en Xcode. Seleccione un equipo de firma válido, conecte un iPhone y compile el target. Los cambios en Swift, Objective-C, paquetes o frameworks requieren una compilación nativa nueva; una recarga de Metro no es suficiente.
+Ejecute `bundle install` con Ruby 3.2.2 o posterior y `bundle exec pod install` desde `ios/`. Mantenga la configuración de React Native y CocoaPods de su app; use el [Podfile](Podfile) como referencia.
 
-En JavaScript use el [contrato compartido](../src/types/BecomeModule.ts) como referencia para invocar `BecomeModule.iniciarBecomeSDK(params)`. Los parámetros obligatorios son `clientId`, `clientSecret`, `contractId` y `userId`. `preventScreenCapture` es opcional y el bridge usa `true` cuando se omite. La [pantalla demo](../src/screens/BecomeSDKScreen.tsx) envía `false` solo para facilitar las pruebas; no copie esa decisión sin evaluar la política de seguridad de su app.
+Abra el `.xcworkspace`, resuelva los paquetes y seleccione un equipo de firma válido. Cambios en Swift, Objective-C o dependencias requieren volver a compilar; Metro solo actualiza JavaScript.
 
-El bridge resuelve con `status`, `message` y `userId` cuando la SDK informa `SUCCES` o `PENDING`. Rechaza con `SDK_ERROR` para `ERROR`, `NOFOUND` o el callback de error. También puede rechazar antes de abrir la SDK con `INVALID_PARAMS`, `MISSING_CAMERA_PERMISSION`, `MISSING_LICENSE_FILES`, `NO_VIEW_CONTROLLER`, `SDK_NOT_LINKED` o `SDK_BUSY`. Muestre o registre el código y mensaje del error, nunca `clientSecret`.
+Use el [contrato TypeScript](../src/types/BecomeModule.ts) y el [ejemplo JWT de un botón](../examples/JWTExample.tsx). La protección de pantalla se activa por defecto; el formulario del demo la desactiva para facilitar las pruebas manuales.
 
-Solicita el permiso real de cámara mediante `AVCaptureDevice` y devuelve `CAMERA_PERMISSION_DENIED` si se rechaza o restringe. Un texto en `Info.plist` no concede ese permiso. Valida `userId` no vacío y `preventScreenCapture` booleano, presenta y finaliza en el hilo principal e ignora callbacks duplicados. Un estado desconocido se rechaza como `INVALID_RESPONSE`. Conserva `responseURL` solo cuando la SDK lo entrega; no dependa de ese campo para determinar el éxito.
+## Permisos, resultados y errores
 
-`BDIVDelegate` solo define callbacks de éxito y error; no ofrece uno de cancelación separado. Por eso no suponga que iOS devolverá `USER_CANCELLED` como Android. Si `NativeModules.BecomeModule` no aparece, compruebe la pertenencia de los dos archivos del bridge al target y vuelva a compilar.
+El bridge solicita cámara mediante `AVCaptureDevice` y devuelve `CAMERA_PERMISSION_DENIED` si el usuario la rechaza. La descripción en `Info.plist` no concede el permiso.
 
-Use un dispositivo físico para comprobar cámara y biometría. El simulador permite revisar la compilación y parte de la UI, pero no sustituye esa prueba.
+La promesa resuelve con `status`, `message` y `userId` para `SUCCES` o `PENDING`. `responseURL` es opcional y se conserva cuando la respuesta de consulta lo entrega. No dependa de ese campo para determinar el éxito.
 
-## Ciclo de vida y tareas de red
+El rechazo conserva `code` y `message`. Antes de abrir, puede informar `INVALID_PARAMS`, `MISSING_CAMERA_PERMISSION`, `MISSING_LICENSE_FILES`, `NO_VIEW_CONTROLLER`, `SDK_NOT_LINKED` o `SDK_BUSY`. Los errores del delegado se entregan como `SDK_ERROR`; los estados desconocidos se rechazan como `INVALID_RESPONSE`.
 
-El ejemplo usa `SceneDelegate` y declara `UIApplicationSceneManifest` en `Info.plist`. [`AppDelegate.swift`](BecomeDigitalApp/AppDelegate.swift) incluye ambas clases: la escena crea la ventana y llama a un único método que inicia React Native. Integre estos cambios con el ciclo de vida de su app; no inicialice React Native dos veces ni mantenga dos ventanas raíz. La configuración soporta una sola escena.
+`BDIVDelegate` no ofrece un callback de cancelación independiente. No suponga que iOS devuelve `USER_CANCELLED` como Android. No registre JWT ni credenciales al mostrar errores.
 
-El callback `application(_:handleEventsForBackgroundURLSession:completionHandler:)` se reenvía a `BecomeDigitalSDK.handleEventsForBackgroundURLSession`. La SDK devuelve si reconoce el identificador de sesión. Si lo reconoce, deja a la SDK gestionar el completion; si no, enrútelo al propietario correspondiente de su app. El demo llama al completion para sesiones desconocidas porque no tiene otros propietarios. No llame al completion dos veces ni reemplace otros manejadores de su aplicación.
+## Ciclo de vida
 
-## Dependencias y diagnóstico
+El ejemplo usa `SceneDelegate` y `UIApplicationSceneManifest`. [AppDelegate.swift](BecomeDigitalApp/AppDelegate.swift) inicia React Native desde la ventana de la escena. Integre esta ruta con su propio ciclo de vida sin crear dos ventanas ni iniciar React Native dos veces.
 
-- Ejecute `bundle install` con Ruby >= 3.2.2 y `bundle exec pod install` en `ios/`. El lockfile fija CocoaPods 1.16.2 y xcodeproj 1.27.0; evite usar accidentalmente el Ruby del sistema.
-- Abra el `.xcworkspace`, no solo el `.xcodeproj`. En Debug, Metro debe corresponder a este proyecto y estar accesible desde el iPhone; Release lleva el bundle JavaScript incluido.
-- No agregue productos `Amplify` o `AWSCognitoAuthPlugin` directamente al target sin revisar qué incorpora el XCFramework. Se han observado clases AWS/Amplify duplicadas con la SDK distribuida; fijar versiones no elimina automáticamente esa duplicación. Si aparece, entregue el log al proveedor para revisar el empaquetado de la SDK, en lugar de añadir más copias.
-- La licencia y el Bundle ID deben estar autorizados conjuntamente. Cambiar el equipo de firma no sustituye una licencia válida.
-- Los mensajes de error pueden contener información de la transacción. No registre respuestas completas, URLs de resultado ni datos personales; comparta con soporte solo evidencia sanitizada.
+El callback `application(_:handleEventsForBackgroundURLSession:completionHandler:)` se reenvía a `BecomeDigitalSDK.handleEventsForBackgroundURLSession`. Si la SDK reconoce la sesión, administra su finalización. Las sesiones de otros componentes deben dirigirse al propietario correspondiente de su app; no invoque dos veces el mismo completion.
 
-## Pruebas
+## Validar la integración
 
-El target `BecomeDigitalAppUITests` verifica la disponibilidad del bridge y usa el botón JavaScript para abrir la introducción nativa. Requiere iOS 17 o posterior por el entorno de ejecución de XCTest de Xcode 27. La SDK AutoCaptureOCR requiere que el target de la app tenga como mínimo iOS 16.0. El esquema usa Release para evitar depender de Metro. La prueba de apertura necesita un perfil Testing guardado manualmente y un teléfono desbloqueado; se omite si no hay perfil y no valida el flujo biométrico. Consulte [VALIDACION.md](../docs/VALIDACION.md) para conocer los comandos y su alcance.
+Compruebe la compilación y el enlace del producto SPM. Realice las pruebas funcionales con cámara, documento y rostro en un iPhone físico autorizado. La compilación y el registro del bridge no certifican los tokens ni el flujo biométrico.
+
+Consulte la [validación](../docs/VALIDACION.md) y la [solución de problemas](../docs/SOLUCION_DE_PROBLEMAS.md).
