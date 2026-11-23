@@ -1,7 +1,8 @@
 import {NativeModules, PermissionsAndroid, Platform} from 'react-native';
-import BecomeModule, {BecomeSDKParams, bridgeDisponible, errorDeSDK} from '../src/types/BecomeModule';
+import BecomeModule, {BecomeSDKParams, BecomeSDKCredentialsParams, BecomeSDKJWTParams, bridgeDisponible, errorDeSDK} from '../src/types/BecomeModule';
 
-const params: BecomeSDKParams = {clientId: 'test-only', clientSecret: 'test-only', contractId: '2', userId: 'test-user'};
+const params: BecomeSDKCredentialsParams = {clientId: 'test-only', clientSecret: 'test-only', contractId: '2', userId: 'test-user'};
+const jwtParams: BecomeSDKJWTParams = {jwt: 'creation-test-only', verificationResultsJwt: 'results-test-only', contractId: '2', userId: 'test-user'};
 const call = jest.fn();
 const originalOS = Platform.OS;
 const result = {status: 'PENDING', message: 'En proceso', userId: 'test-user'};
@@ -69,4 +70,47 @@ test('rechaza otra llamada concurrente y permite una posterior', async () => {
   await first;
   await expect(BecomeModule.iniciarBecomeSDK(params)).resolves.toEqual(result);
   expect(call).toHaveBeenCalledTimes(2);
+});
+
+test.each(['ios', 'android'])('entrega ambos JWT normalizados sin credenciales en %s', async platform => {
+  Object.defineProperty(Platform, 'OS', {value: platform, configurable: true});
+  const permission = jest.spyOn(PermissionsAndroid, 'request').mockResolvedValue(PermissionsAndroid.RESULTS.GRANTED);
+  await expect(BecomeModule.iniciarBecomeSDK({
+    ...jwtParams, jwt: ' creation-test-only ', verificationResultsJwt: ' results-test-only ',
+  })).resolves.toEqual(result);
+  expect(call).toHaveBeenCalledWith({...jwtParams, preventScreenCapture: true});
+  expect(call.mock.calls[0][0]).not.toHaveProperty('clientId');
+  expect(call.mock.calls[0][0]).not.toHaveProperty('clientSecret');
+  expect(permission).toHaveBeenCalledTimes(platform === 'android' ? 1 : 0);
+});
+
+test.each(['jwt', 'verificationResultsJwt', 'contractId', 'userId'])('rechaza %s vacío en el modo JWT', async field => {
+  await expect(BecomeModule.iniciarBecomeSDK({...jwtParams, [field]: ' '})).rejects.toMatchObject({code: 'INVALID_PARAMS'});
+  expect(call).not.toHaveBeenCalled();
+});
+
+test.each([
+  {...jwtParams, jwt: null},
+  {...jwtParams, verificationResultsJwt: undefined},
+  {...jwtParams, verificationResultsJwt: 123},
+  {...jwtParams, clientId: 'test-only'},
+  {...params, jwt: 'creation-test-only'},
+  {contractId: '2', userId: 'test-user'},
+])('rechaza una combinación de autenticación inválida: %#', async invalid => {
+  await expect(BecomeModule.iniciarBecomeSDK(invalid as unknown as BecomeSDKParams)).rejects.toMatchObject({code: 'INVALID_PARAMS'});
+  expect(call).not.toHaveBeenCalled();
+});
+
+test.each(['jwt', 'verificationResultsJwt'])('rechaza el prefijo Bearer en %s sin exponer el token', async field => {
+  await expect(BecomeModule.iniciarBecomeSDK({...jwtParams, [field]: ' bearer private-test-only '}))
+    .rejects.toMatchObject({code: 'INVALID_PARAMS', message: 'Entregue ambos JWT sin el prefijo Bearer.'});
+  expect(call).not.toHaveBeenCalled();
+});
+
+test('no cambia a credenciales si la SDK rechaza los JWT y permite un nuevo intento', async () => {
+  call.mockRejectedValueOnce({code: 'SDK_ERROR', message: 'Token rechazado'});
+  await expect(BecomeModule.iniciarBecomeSDK(jwtParams)).rejects.toMatchObject({code: 'SDK_ERROR'});
+  await BecomeModule.iniciarBecomeSDK({...jwtParams, jwt: 'new-creation-test-only', verificationResultsJwt: 'new-results-test-only'});
+  expect(call).toHaveBeenCalledTimes(2);
+  expect(call.mock.calls.every(([value]) => !('clientSecret' in value))).toBe(true);
 });

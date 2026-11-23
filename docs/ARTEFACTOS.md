@@ -1,41 +1,43 @@
-# Versiones y artefactos de la integración
+# Versiones de referencia para integrar el demo
 
-Este registro identifica la configuración del demo; no implica compatibilidad universal ni autorización para redistribuir una SDK. Solicite artefactos y licencias autorizados para su contrato, los identificadores de su app y el ambiente correspondiente. Para consultar los requisitos de dependencias y licencias nativas, use las guías de integración de la [SDK AutoCaptureOCR para Android](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-Android) y de la [SDK AutoCaptureOCR para iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS).
+Use estas versiones junto con las guías nativas de [Android](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-Android/blob/main/INSTALACION.md) e [iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS/blob/main/INSTALACION.md).
 
-| Componente | Configuración |
+| Componente | Configuración del ejemplo |
 | --- | --- |
 | React Native / React | 0.84.1 / 19.2.3 |
-| Node.js | >= 22.11.0 |
+| Node.js | 22.11.0 o posterior |
 | Java / Android mínimo | 17 / API 24 |
 | SDK Android de compilación y destino / Build Tools | 36 / 36.0.0 |
 | Android Gradle Plugin / Gradle | 8.12.0 / 8.14.2 |
 | Kotlin / plugin Compose | 2.2.10 / 2.2.10 |
 | Android NDK | 27.1.12297006 |
-| Ruby de referencia / CocoaPods / xcodeproj | 3.2.2 / 1.16.2 / 1.27.0 |
-| Versión mínima de iOS para AutoCaptureOCR | 16.0 |
-| Xcode usado para la validación local | 27.0 (27A266a) |
-| Framework de Become para iOS | 1.2.3 |
-| Amplify Swift | 2.53.3 |
-| Amplify UI Face Liveness | 1.4.4 |
-| BlinkID Core / UX | 8002.0.2 |
-| Interfaz nativa iOS | SwiftUI |
+| SDK Become para Android | `ai.becomedigital:identity-verification:3.5.1` |
+| Ruby / CocoaPods / xcodeproj | 3.2.2 o posterior / 1.16.2 / 1.27.0 |
+| iOS mínimo | 16.0 |
+| Herramientas iOS | Xcode compatible con Swift 6.4 |
+| SDK Become para iOS | Producto SPM `BDIdentityVerification`, paquete 5.3.2 |
 
-Consulte la guía nativa de Android para conocer todas las dependencias Gradle; no copie únicamente el AAR. En iOS conserve `Package.resolved` y `Podfile.lock` junto con el proyecto, además de los productos, recursos y ajustes requeridos por el target. Las dependencias de AutoCaptureOCR para iOS requieren iOS 16.0 o posterior; no use la versión mínima anterior que figuraba en los ejemplos previos del bridge.
+Las dependencias nativas se obtienen desde Maven Central y SPM. Conserve las versiones exactas, `Package.resolved` y `Podfile.lock`. No enlace simultáneamente las SDK locales anteriores y los paquetes publicados.
 
-## Binarios de referencia
+Consulte los [pasos para configurar Maven Central y SPM en React Native](INSTALACION_NATIVA.md).
 
-Los binarios de esta actualización se sincronizaron con el proyecto local de integración `Become`: únicamente el AAR y el XCFramework, sin copiar credenciales ni licencias. Se usa el hash porque un proveedor puede generar binarios distintos con el mismo número de versión.
+## Arquitecturas
 
-| Archivo | SHA-256 |
-| --- | --- |
-| `android/app/libs/becomedigitalsdk.aar` | `2811a8811e047b9c5a02d8aa8b85ee07ac668641d27baf38c3b8e89153378cb3` |
-| `ios/BecomeDigitalApp/Frameworks/BDIdentityVerification.xcframework/ios-arm64/BDIdentityVerification.framework/BDIdentityVerification` (SDK 1.2.3) | `04c6fde8b37190144758f284f51ecf5c792f127cc4ed1190b067526974842eaf` |
+La distribución Android admite ARMv7 y ARM64. Este demo selecciona `armeabi-v7a` y `arm64-v8a`; no ofrece captura documental para `x86_64`.
 
-Puede comprobarlos con `shasum -a 256 RUTA_DEL_ARCHIVO`. El segundo hash identifica el binario de dispositivo, no el directorio completo del XCFramework.
+El paquete iOS incluye `arm64` para dispositivo y `arm64`/`x86_64` para simulador. La cámara, el documento y la validación facial se prueban en dispositivos físicos.
 
-## Antes de redistribuir
+## Licencias de la aplicación
 
-- Confirme la autorización para distribuir la SDK y los recursos licenciados (`com.become.blinkid.key` para Android y `com.become.blinkid.key.txt` para iOS). Que los archivos ya existan en este repositorio no demuestra permiso para reutilizarlos en otra app.
-- No agregue claves de firma de distribución, credenciales de cliente, perfiles Testing, datos personales ni artefactos de pruebas.
-- `.gitignore` evita añadir nuevos archivos locales por accidente, pero no retira archivos ya versionados ni elimina secretos del historial.
-- El demo usa firma Android debug generada localmente; no sirve como política de firma de una aplicación de producción.
+Solicite licencias emitidas para los identificadores de su propia app y coloque los archivos en:
+
+- Android: `android/app/src/main/assets/com.become.blinkid.key`.
+- Demo iOS: `ios/Application/Resources/com.become.blinkid.key.txt`; en otra app, agréguelo al target y a **Copy Bundle Resources**.
+
+Los archivos están ignorados por Git. Las licencias anteriores de otro motor de captura no se reutilizan. Una licencia no sustituye las autorizaciones del contrato ni es una llave de firma de distribución.
+
+## Autenticación
+
+La opción recomendada recibe `jwt` y `verificationResultsJwt` desde el backend. La firma anterior con credenciales se conserva para compatibilidad. Consulte la [guía JWT](AUTENTICACION_JWT.md).
+
+Al compartir su integración, excluya JWT, credenciales, licencias, datos personales y llaves de distribución. El demo utiliza firma de depuración Android; configure la firma de producción en su aplicación.

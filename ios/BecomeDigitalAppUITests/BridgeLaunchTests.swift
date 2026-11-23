@@ -15,6 +15,7 @@ final class BridgeLaunchTests: XCTestCase {
     app.launch()
     let button = app.buttons["launch-sdk"]
     XCTAssertTrue(button.waitForExistence(timeout: 45))
+    app.buttons["auth-credentials"].tap()
     let enabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "enabled == true"), object: button)
     let ready = XCTWaiter.wait(for: [enabled], timeout: 10) == .completed
     try XCTSkipIf(!ready, "Guarda un perfil Testing autorizado en el demo antes de probar la SDK.")

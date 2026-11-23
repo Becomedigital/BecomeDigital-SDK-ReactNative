@@ -1,55 +1,58 @@
 # Solución de problemas de integración
 
-Identifique primero dónde falla: instalación del APK/app, carga de JavaScript, registro del módulo o flujo de la SDK. No son la misma capa.
+Identifique si el problema ocurre en la instalación, Metro, el registro del bridge, la licencia, los tokens o la verificación.
 
 ## Android: conexión e instalación
 
-Ejecute `adb devices -l`. Si aparece `unauthorized`, desbloquee el teléfono y acepte su huella RSA. Si hay varios dispositivos, use `adb -s SERIAL` y `npm run android -- --device SERIAL` para seleccionar uno explícitamente.
+Ejecute `adb devices -l`. Si aparece `unauthorized`, desbloquee el teléfono y acepte la autorización USB. Con varios dispositivos use `adb -s SERIAL` y `npm run android -- --device SERIAL`.
 
-En Xiaomi, `INSTALL_FAILED_USER_RESTRICTED` suele corresponder a restricciones de instalación por USB. Revise las opciones de desarrollador y confirme el diálogo de instalación. Los errores de `INJECT_EVENTS` durante automatización son distintos: revise la opción de depuración USB de seguridad y la política del dispositivo. No desactive protecciones ni cambie políticas corporativas indiscriminadamente; la prueba manual puede seguir funcionando aunque la automatizada no tenga permiso.
+En Xiaomi, `INSTALL_FAILED_USER_RESTRICTED` puede indicar una restricción de instalación por USB. Revise las opciones de desarrollador y confirme el diálogo del teléfono.
 
-### `INSTALL_FAILED_UPDATE_INCOMPATIBLE`
+Si aparece `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, ya existe una app con el mismo identificador y otra firma. Puede compilar con la misma firma de desarrollo o desinstalar la anterior si acepta perder sus datos. No cambie el identificador para evitar el conflicto sin confirmar la licencia autorizada.
 
-Ya existe una app con el mismo `applicationId`, firmada con otra llave. Dos proyectos de demo pueden compartir `com.becomedigitalapp` y aun así tener firmas distintas.
+## Metro o módulo ausente
 
-Opciones: compilar con la misma firma de desarrollo autorizada o desinstalar la instalación anterior. **Desinstalar elimina datos y el perfil Testing local**. Solo si acepta perderlos:
+1. Ejecute `npm start` desde este proyecto. Compruebe el puerto 8081 con `lsof -nP -iTCP:8081 -sTCP:LISTEN`.
+2. Android por USB: ejecute `adb -s SERIAL reverse tcp:8081 tcp:8081`.
+3. Si Metro conserva transformaciones antiguas, deténgalo y ejecute `npm start -- --reset-cache`.
+4. Si el bridge no aparece, revise el registro de `BecomePackage()` en Android y la pertenencia de ambos archivos del bridge al target iOS. Vuelva a compilar la app nativa.
+5. En iOS abra el `.xcworkspace` y compruebe la conectividad entre el iPhone y Metro. Release incorpora su propio JavaScript.
 
-```sh
-adb -s SERIAL uninstall com.becomedigitalapp
-npm run android -- --device SERIAL
-```
+## Dependencias nativas
 
-No se realiza una desinstalación automática. Tampoco cambie el `applicationId` para evitar el conflicto sin confirmar que la licencia de la SDK permite el nuevo identificador. El demo no incluye una llave de distribución: usa la firma debug local del Android SDK incluso en Release.
+Android debe resolver `ai.becomedigital:identity-verification:3.5.1` desde Maven Central. No agregue el AAR local ni las dependencias de captura anteriores al mismo tiempo.
 
-## Metro: pantalla roja, bundle ausente o proyecto equivocado
+iOS debe resolver el paquete Become **5.3.2** con Xcode compatible con Swift 6.4 y el producto `BDIdentityVerification` enlazado. Retire las referencias previas al XCFramework local y productos de captura que ya no utiliza. Siga las [versiones de referencia](ARTEFACTOS.md) y las guías nativas enlazadas allí.
 
-1. Ejecute `npm start` desde la raíz de **este** repositorio. Compruebe si otro Metro ya ocupa el puerto 8081 (`lsof -nP -iTCP:8081 -sTCP:LISTEN` en macOS). No conecte una app al bundle de otro proyecto aunque los nombres sean parecidos.
-2. Android por USB: `adb -s SERIAL reverse tcp:8081 tcp:8081`. Verifique con `adb -s SERIAL reverse --list` y recargue la app.
-3. Si necesita dos proyectos a la vez, use un puerto distinto en ambos lados: `npm start -- --port 8082`, `adb -s SERIAL reverse tcp:8082 tcp:8082` y `npm run android -- --device SERIAL --port 8082`.
-4. Si Metro usa este proyecto pero conserva transformaciones antiguas, deténgalo y ejecute `npm start -- --reset-cache`. Esto no recompila el bridge nativo.
-5. En un iPhone, compruebe la dirección del servidor y la conectividad local entre Mac y teléfono. Para aislar problemas de Metro, compile Release desde Xcode.
+Si CocoaPods falla, compruebe Ruby 3.2.2 o posterior y use `bundle exec pod install`. Si SPM informa un objeto Git ausente, identifique el paquete afectado y repare únicamente su descarga; no cambie versiones para ocultar el problema.
 
-`metro.config.js`, `.watchmanconfig`, Jest y TypeScript excluyen los artefactos del proyecto y sus dependencias generadas. No elimine directorios completos de usuario para resolver un error de caché.
+Si movió el proyecto y el empaquetado informa que no encuentra `hermesc`, revise `HERMES_CLI_PATH`. El demo lo resuelve en `ios/.xcode.env` desde la ubicación actual de los Pods; no copie una ruta absoluta de otro equipo. Revise también cualquier configuración local que reemplace ese valor.
 
-## iOS: instalación de dependencias
+## Licencia, cámara o pantalla activa
 
-Use Ruby >= 3.2.2 y ejecute `bundle exec pod install`, no un `pod` global de otra versión. Compruebe `ruby --version` y `bundle exec pod --version` antes de cambiar la configuración del equipo.
+| Código | Qué revisar |
+| --- | --- |
+| `MISSING_LICENSE_FILES` | `com.become.blinkid.key` en los assets Android o `com.become.blinkid.key.txt` en el bundle iOS. |
+| `CAMERA_PERMISSION_DENIED` | Permiso de cámara en Ajustes de la app. |
+| `MISSING_CAMERA_PERMISSION` | `NSCameraUsageDescription` en `Info.plist`. |
+| `SDK_BUSY` | Termine el flujo activo antes de iniciar otro. |
+| `NO_ACTIVITY` / `NO_VIEW_CONTROLLER` | App visible con una pantalla válida para presentar la SDK. |
 
-Si Swift Package Manager informa `not a tree object` o un objeto ausente del índice Git, es un problema del repositorio descargado, no de las credenciales ni del bridge. Identifique el paquete en el log y repare o vuelva a descargar únicamente su caché dañada. No cambie las versiones para ocultar esa corrupción ni elimine todas las cachés compartidas sin revisar el alcance. `-skipPackageUpdates` puede evitar una actualización innecesaria cuando los objetos requeridos ya existen; no repara objetos faltantes.
+La presencia de la licencia no demuestra su validez para el identificador de la app. No copie las licencias de otra app o motor de captura.
 
-## La SDK no se presenta
+## JWT y permisos de consulta
 
-- Si el indicador del demo dice que falta el bridge, revise el registro nativo y recompile; credenciales distintas no reparan un módulo ausente.
-- Si el código es `MISSING_LICENSE_FILES`, revise los recursos del APK/bundle. Una licencia presente puede seguir siendo inválida para el contrato o identificador de la app.
-- Si es `CAMERA_PERMISSION_DENIED`, habilite cámara en Ajustes y reintente. No hace falta permiso de almacenamiento externo para esta llamada del bridge.
-- Con `SDK_BUSY`, termine el flujo activo. No agregue un timeout que desbloquee el botón mientras la SDK siga visible: permitiría abrir dos sesiones.
-- Con `NO_ACTIVITY` o `NO_VIEW_CONTROLLER`, vuelva a una pantalla activa de la app antes de iniciar.
-- Si la SDK devuelve `PENDING`, muéstrelo como pendiente. No muestre un éxito definitivo.
+`INVALID_PARAMS` indica campos vacíos, tipos incorrectos, prefijo `Bearer` o mezcla de JWT con credenciales. Entregue ambos tokens sin el prefijo y mantenga `contractId` y `userId` como texto.
 
-## Incidencias que pertenecen a la SDK nativa
+Si se crea la verificación con HTTP 201, pero consultar devuelve HTTP 403, compruebe que el segundo token tenga `verification:get` y se asigne a `verificationResultsJwt`. El token principal debe autorizar `verification:create`. Revise también ambiente, contrato y vigencia; HTTP 403 no prueba por sí solo la expiración.
 
-En pruebas exploratorias del proyecto de integración se observó un ANR Android de primera ejecución, asociado a inicialización SQLite del catálogo de países en el hilo principal de la SDK. No se ha certificado su corrección para todos los dispositivos. Si lo reproduce, registre versión/hash del AAR, modelo, Android, pasos y un informe ANR sanitizado para el proveedor. No mueva `startAuthentication` a un hilo de fondo: la presentación de UI debe permanecer en el hilo principal.
+La SDK no renueva los JWT ni cambia automáticamente a credenciales. Solicite tokens vigentes a su backend para el siguiente intento. No reinicie automáticamente la captura ni implemente consultas adicionales al recibir `PENDING`.
 
-En iOS se han observado clases Amplify/AWS duplicadas entre el XCFramework y los paquetes enlazados. La configuración evita añadir productos directos innecesarios, pero la corrección de un binario que incorpora copias sigue siendo responsabilidad de su empaquetado. No interprete la ausencia de un error de compilación como solución definitiva.
+## Resultado y soporte
 
-No adjunte credenciales, documentos, imágenes faciales ni respuestas completas a una incidencia pública. Los logs de validación se guardan localmente en `artifacts/`, ignorado por Git, y deben revisarse antes de compartirlos.
+- `SUCCES` es el estado público de éxito; `PENDING` es pendiente y no debe mostrarse como verificación final.
+- Android puede informar `USER_CANCELLED`; no suponga que iOS expone el mismo callback.
+- Muestre `code` y `message` al recibir un rechazo. Un estado desconocido se rechaza como `INVALID_RESPONSE`.
+- Comparta con soporte la versión del paquete, plataforma, paso afectado y un error revisado. Excluya tokens, credenciales, documentos, imágenes faciales, licencias y datos personales.
+
+Consulte la [guía JWT](AUTENTICACION_JWT.md) para revisar el flujo completo.

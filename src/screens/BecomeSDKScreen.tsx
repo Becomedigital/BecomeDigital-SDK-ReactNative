@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useRef} from 'react';
+import React, {useState, useRef} from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -36,27 +36,38 @@ interface ResultState {
 
 // ─── Component ────────────────────────────────────────────────────────────
 const BecomeSDKScreen = () => {
+  const [authMode, setAuthMode]         = useState<'jwt' | 'credentials'>('jwt');
+  const [jwt, setJwt]                   = useState('');
+  const [resultsJwt, setResultsJwt]      = useState('');
   const [clientId, setClientId]         = useState('');
   const [clientSecret, setClientSecret] = useState('');
   const [contractId, setContractId]     = useState('');
   const [result, setResult]             = useState<ResultState>({status: 'idle'});
   const scrollRef = useRef<ScrollView>(null);
   const busyRef = useRef(false);
+  const profileLoadRef = useRef(0);
   const bridgeReady = bridgeDisponible();
   const hasSdkError = result.status === 'error' || result.status === 'cancelled';
   const sdkErrorText = hasSdkError
     ? `${result.errorCode ?? 'UNKNOWN_ERROR'}: ${result.errorMessage ?? 'Sin detalle devuelto por la SDK.'}`
     : '';
 
-  // Load testing profile on mount
-  useEffect(() => {
-    handleLoadConnection();
-  }, []);
-
   const isFormValid =
-    clientId.trim() !== '' &&
-    clientSecret.trim() !== '' &&
-    contractId.trim() !== '';
+    contractId.trim() !== '' && (authMode === 'jwt'
+      ? jwt.trim() !== '' && resultsJwt.trim() !== ''
+      : clientId.trim() !== '' && clientSecret.trim() !== '');
+
+  const handleAuthMode = (mode: 'jwt' | 'credentials') => {
+    if (busyRef.current || mode === authMode) return;
+    profileLoadRef.current += 1;
+    setJwt('');
+    setResultsJwt('');
+    setResult({status: 'idle'});
+    setAuthMode(mode);
+    if (mode === 'credentials') {
+      handleLoadConnection();
+    }
+  };
 
   const handleStartVerification = async () => {
     if (busyRef.current) return;
@@ -73,9 +84,11 @@ const BecomeSDKScreen = () => {
     // Auto-generate random userId per request
     const generatedUserId = 'user-' + Date.now() + '-' + Math.random().toString(36).substring(2, 9);
 
+    const authentication = authMode === 'jwt'
+      ? {jwt: jwt.trim(), verificationResultsJwt: resultsJwt.trim()}
+      : {clientId: clientId.trim(), clientSecret: clientSecret.trim()};
     const params: BecomeSDKParams = {
-      clientId: clientId.trim(),
-      clientSecret: clientSecret.trim(),
+      ...authentication,
       contractId: contractId.trim(),
       userId: generatedUserId,
       // The native demo apps allow screen capture to simplify manual QA.
@@ -102,6 +115,7 @@ const BecomeSDKScreen = () => {
   };
 
   const handleSaveConnection = async () => {
+    if (authMode !== 'credentials') return;
     try {
       await AsyncStorage.setItem('testing_clientId', clientId.trim());
       await AsyncStorage.setItem('testing_clientSecret', clientSecret.trim());
@@ -113,10 +127,13 @@ const BecomeSDKScreen = () => {
   };
 
   const handleLoadConnection = async () => {
+    const loadId = ++profileLoadRef.current;
     try {
       const savedClientId = await AsyncStorage.getItem('testing_clientId');
       const savedClientSecret = await AsyncStorage.getItem('testing_clientSecret');
       const savedContractId = await AsyncStorage.getItem('testing_contractId');
+
+      if (loadId !== profileLoadRef.current) return;
       
       if (savedClientId) setClientId(savedClientId);
       if (savedClientSecret) setClientSecret(savedClientSecret);
@@ -152,34 +169,86 @@ const BecomeSDKScreen = () => {
               </View>
               <Text style={styles.title}>Verificación de{'\n'}Identidad Become</Text>
               <Text style={styles.subtitle}>
-                Por favor, ingrese sus credenciales para iniciar el proceso de
-                validación biométrica y documental.
+                {authMode === 'jwt'
+                  ? 'Ingrese los dos JWT entregados por su backend para iniciar la verificación.'
+                  : 'Compatibilidad con la integración anterior mediante credenciales.'}
               </Text>
               <Text testID="bridge-status" style={styles.subtitle}>
                 {bridgeReady ? '✓ Bridge nativo conectado' : 'Falta registrar BecomeModule. Recompila la app.'}
               </Text>
             </View>
 
+            <View style={styles.authModeRow} accessibilityRole="tablist">
+              <TouchableOpacity
+                testID="auth-jwt"
+                accessibilityRole="tab"
+                accessibilityState={{selected: authMode === 'jwt', disabled: result.status === 'loading'}}
+                disabled={result.status === 'loading'}
+                style={[styles.authModeButton, authMode === 'jwt' && styles.authModeSelected]}
+                onPress={() => handleAuthMode('jwt')}>
+                <Text style={styles.authModeText}>JWT (recomendado)</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                testID="auth-credentials"
+                accessibilityRole="tab"
+                accessibilityState={{selected: authMode === 'credentials', disabled: result.status === 'loading'}}
+                disabled={result.status === 'loading'}
+                style={[styles.authModeButton, authMode === 'credentials' && styles.authModeSelected]}
+                onPress={() => handleAuthMode('credentials')}>
+                <Text style={styles.authModeText}>Credenciales (anterior)</Text>
+              </TouchableOpacity>
+            </View>
+
             {/* ── Form ── */}
             <View style={styles.formCard}>
+              {authMode === 'jwt' ? (
+                <>
+                  <FormField
+                    testID="jwt"
+                    label="JWT de creación (verification:create)"
+                    placeholder="Pegue el JWT sin Bearer"
+                    value={jwt}
+                    onChangeText={setJwt}
+                    icon="🔑"
+                    secureTextEntry
+                    editable={result.status !== 'loading'}
+                  />
+                  <FormField
+                    testID="verification-results-jwt"
+                    label="JWT de consulta (verification:get)"
+                    placeholder="Pegue el JWT de resultados sin Bearer"
+                    value={resultsJwt}
+                    onChangeText={setResultsJwt}
+                    icon="🔒"
+                    secureTextEntry
+                    editable={result.status !== 'loading'}
+                  />
+                </>
+              ) : (
+                <>
+                  <FormField
+                    testID="client-id"
+                    label="Client ID"
+                    placeholder="Ingrese su Client ID"
+                    value={clientId}
+                    onChangeText={setClientId}
+                    icon="🔑"
+                    editable={result.status !== 'loading'}
+                  />
+                  <FormField
+                    testID="client-secret"
+                    label="Client Secret"
+                    placeholder="Ingrese su Client Secret"
+                    value={clientSecret}
+                    onChangeText={setClientSecret}
+                    icon="🔒"
+                    secureTextEntry
+                    editable={result.status !== 'loading'}
+                  />
+                </>
+              )}
               <FormField
-                label="Client ID"
-                placeholder="Ingrese su Client ID"
-                value={clientId}
-                onChangeText={setClientId}
-                icon="🔑"
-                editable={result.status !== 'loading'}
-              />
-              <FormField
-                label="Client Secret"
-                placeholder="Ingrese su Client Secret"
-                value={clientSecret}
-                onChangeText={setClientSecret}
-                icon="🔒"
-                secureTextEntry
-                editable={result.status !== 'loading'}
-              />
-              <FormField
+                testID="contract-id"
                 label="Contract ID"
                 placeholder="Ingrese su Contract ID"
                 value={contractId}
@@ -191,15 +260,22 @@ const BecomeSDKScreen = () => {
               />
             </View>
 
+            {authMode === 'jwt' && (
+              <Text style={styles.authHint}>
+                Los tokens se mantienen solo en memoria y no se guardan en el perfil Testing.
+                {'\n'}Su backend obtiene y renueva los JWT; client_secret permanece en el servidor.
+              </Text>
+            )}
+
             {/* ── Saved Connections Actions ── */}
-            <View style={styles.savedConnectionsRow}>
-              <TouchableOpacity style={styles.testingBtn} onPress={handleLoadConnection} disabled={result.status === 'loading'}>
+            {authMode === 'credentials' && <View style={styles.savedConnectionsRow}>
+              <TouchableOpacity testID="load-testing" style={styles.testingBtn} onPress={handleLoadConnection} disabled={result.status === 'loading'}>
                 <Text style={styles.testingBtnText}>🔄 Cargar Testing</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.testingBtn} onPress={handleSaveConnection} disabled={result.status === 'loading'}>
+              <TouchableOpacity testID="save-testing" style={styles.testingBtn} onPress={handleSaveConnection} disabled={result.status === 'loading'}>
                 <Text style={styles.testingBtnText}>💾 Guardar Testing</Text>
               </TouchableOpacity>
-            </View>
+            </View>}
 
             {/* ── CTA Button ── */}
             <TouchableOpacity
@@ -249,6 +325,7 @@ const BecomeSDKScreen = () => {
 // ─── Sub-components ───────────────────────────────────────────────────────
 
 interface FormFieldProps {
+  testID: string;
   label: string;
   placeholder: string;
   value: string;
@@ -261,6 +338,7 @@ interface FormFieldProps {
 }
 
 const FormField = ({
+  testID,
   label,
   placeholder,
   value,
@@ -275,7 +353,7 @@ const FormField = ({
     <Text style={styles.fieldLabel}>{icon}  {label}</Text>
     <TextInput
       accessibilityLabel={label}
-      testID={label === 'Client ID' ? 'client-id' : label === 'Client Secret' ? 'client-secret' : 'contract-id'}
+      testID={testID}
       style={[styles.textInput, !editable && styles.textInputDisabled]}
       placeholder={placeholder}
       placeholderTextColor={COLORS.placeholder}
@@ -463,6 +541,33 @@ const styles = StyleSheet.create({
   },
 
   // Form card
+  authModeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 16,
+  },
+  authModeButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    padding: 12,
+    justifyContent: 'center',
+  },
+  authModeSelected: {
+    backgroundColor: COLORS.accentBlue,
+  },
+  authModeText: {
+    color: COLORS.text,
+    textAlign: 'center',
+    fontSize: 13,
+  },
+  authHint: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    lineHeight: 19,
+    marginBottom: 20,
+  },
   formCard: {
     backgroundColor: COLORS.surface,
     borderRadius: 14,

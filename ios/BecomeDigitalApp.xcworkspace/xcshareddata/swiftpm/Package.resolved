@@ -1,5 +1,5 @@
 {
-  "originHash" : "5eabcf89d5d5b169511f8c27c58c18b6c5dfb857d6c727e713ca247d22de5dad",
+  "originHash" : "b367c6a618edca8cae22e82d3bc4d0ba32ac662266b571773717a259bbc9c175",
   "pins" : [
     {
       "identity" : "amplify-swift",
@@ -56,21 +56,21 @@
       }
     },
     {
-      "identity" : "capture-core-sp",
+      "identity" : "becomedigitalsdkautocaptureocr-ios",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/BlinkID/capture-core-sp",
+      "location" : "https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS.git",
       "state" : {
-        "revision" : "1bb2f89cc9ba283d4cd3536f1934d6277c89d6f6",
-        "version" : "1.4.3"
+        "revision" : "8d4626c16424739d288c24c93506a24db0df20d0",
+        "version" : "5.3.2"
       }
     },
     {
-      "identity" : "capture-ux-sp",
+      "identity" : "blinkid-ios",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/BlinkID/capture-ux-sp",
+      "location" : "https://github.com/microblink/blinkid-ios.git",
       "state" : {
-        "revision" : "42b6c284b1d5a07b62d2441e9bf08b62040ff7c7",
-        "version" : "1.4.3"
+        "revision" : "b75582643418ecbf94220654f0319281efca0fa9",
+        "version" : "8002.0.2"
       }
     },
     {

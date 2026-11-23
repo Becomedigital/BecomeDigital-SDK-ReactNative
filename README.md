@@ -1,23 +1,21 @@
-# Integrar la SDK de Become Digital en React Native
+# Integrar Become Digital en React Native
 
-La SDK de Become Digital funciona de forma nativa en Android e iOS. Una app React Native no puede llamarla directamente desde JavaScript: necesita un **bridge** en cada plataforma. Este repositorio es una app de ejemplo con esos bridges implementados; no es un paquete NPM que se instale automáticamente en otra app.
+Become Digital permite verificar la identidad mediante captura documental y validación facial. Este repositorio contiene un demo React Native y los bridges de Android e iOS necesarios para abrir la interfaz nativa y recibir el resultado en JavaScript.
 
-Esta guía explica qué piezas trasladar a su proyecto, cómo conectarlas y cómo manejar la respuesta. Para consultar las dependencias, licencias, ambientes compatibles e instrucciones de migración de la SDK nativa, use los repositorios de integración actuales:
-
-- [SDK AutoCaptureOCR para Android](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-Android)
-- [SDK AutoCaptureOCR para iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS)
+La opción recomendada es iniciar con JWT obtenidos por el backend de su aplicación. El demo también conserva el acceso anterior con credenciales para facilitar la migración. Consulte las guías nativas de [Android](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-Android) e [iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS).
 
 ## Antes de comenzar
 
-- Necesita una app React Native con proyectos nativos `android/` e `ios/` y acceso a sus compilaciones.
-- Solicite a Become Digital la SDK, las licencias y las credenciales correspondientes a su integración. No copie credenciales de prueba al código ni registre `clientSecret` en logs.
-- Este ejemplo usa React Native 0.84.1, Node.js 22.11 o posterior, Java 17 y `minSdkVersion` 24 en Android. La SDK AutoCaptureOCR actual para iOS requiere iOS 16.0 o posterior y su interfaz nativa está implementada en SwiftUI; configure la versión mínima de iOS de su app antes de integrarla. Valide la compatibilidad de las dependencias nativas antes de trasladar esta configuración a una app que use otras versiones.
-- Es un módulo nativo clásico usado mediante la interoperabilidad de la Nueva Arquitectura de React Native, no un TurboModule generado. No funciona en Expo Go: necesita una compilación nativa propia. No se ha certificado una matriz de otras versiones de React Native.
-- Confirme con Become Digital los identificadores autorizados por sus licencias. El demo usa `com.becomedigitalapp` en Android y `com.becomedigital.sdk.identity.verification.finger.ios` en iOS. Cambiar estos identificadores puede requerir licencias nuevas; una licencia de la SDK no es una llave de firma o distribución.
+- Necesita una app React Native con proyectos nativos `android/` e `ios/`. El bridge no funciona en Expo Go; requiere una compilación nativa propia.
+- El ejemplo usa React Native 0.84.1, React 19.2.3 y Node.js 22.11 o posterior. Es un módulo nativo clásico que usa la interoperabilidad de la Nueva Arquitectura.
+- Android requiere Java 17, Android SDK 36, Build Tools 36.0.0, NDK 27.1.12297006 y Android 7.0 o posterior. Consulte las [versiones del ejemplo](docs/ARTEFACTOS.md).
+- iOS requiere iOS 16.0 o posterior, Xcode compatible con Swift 6.4, Ruby 3.2.2 o posterior y CocoaPods 1.16.2.
+- Solicite las licencias emitidas para su app. Los identificadores del demo son `com.becomedigitalapp` en Android y `com.becomedigital.sdk.identity.verification.finger.ios` en iOS.
+- Su backend debe entregar los dos JWT para el mismo contrato y ambiente. `client_id` y `client_secret` permanecen en el backend.
 
-## Ejecutar primero el demo
+## Ejecutar el demo
 
-Desde la raíz de este repositorio:
+Desde la raíz:
 
 ```sh
 npm ci
@@ -33,9 +31,9 @@ adb -s SERIAL reverse tcp:8081 tcp:8081
 npm run android -- --device SERIAL
 ```
 
-Sustituya `SERIAL` por el identificador de su dispositivo autorizado. Configure Java 17, Android SDK 36, Build Tools 36.0.0 y NDK 27.1.12297006. `android/local.properties` puede contener su `sdk.dir` local; no lo suba al repositorio. Kotlin y su plugin Compose están alineados en 2.2.10, con Android Gradle Plugin 8.12.0. No copie una ruta `JAVA_HOME` de otra máquina.
+Sustituya `SERIAL` por el identificador del dispositivo. Configure el Android SDK y `JAVA_HOME` en su equipo. Si necesita `android/local.properties`, use su propia ruta `sdk.dir`; es un archivo local.
 
-Para iOS, seleccione Ruby 3.2.2 (archivo `.ruby-version`; se requiere Ruby >= 3.2.2), e instale las versiones bloqueadas de CocoaPods y sus dependencias:
+Para iOS:
 
 ```sh
 bundle install
@@ -44,160 +42,126 @@ bundle exec pod install
 open BecomeDigitalApp.xcworkspace
 ```
 
-Seleccione su equipo de desarrollo en **Signing & Capabilities**, habilite el modo desarrollador del iPhone y ejecútelo desde Xcode. El ejemplo usa CocoaPods 1.16.2 y xcodeproj 1.27.0. Consulte las [instrucciones iOS](ios/README_BECOME_IOS.md) antes de resolver paquetes o modificar el ciclo de vida.
+Espere a que Xcode resuelva los paquetes. Seleccione su equipo en **Signing & Capabilities** y ejecute el target de la app. Consulte la [guía iOS](ios/README_BECOME_IOS.md).
 
-Introduzca las credenciales autorizadas en el formulario y pulse **Iniciar Verificación**. El indicador «Bridge nativo conectado» confirma el registro del módulo, no la validez de la licencia ni de las credenciales. Debug necesita Metro del **mismo proyecto**; Release incorpora JavaScript en la app. No use simultáneamente dos proyectos con el mismo puerto Metro.
+El formulario abre en **JWT (recomendado)**. Pegue el token de creación en **JWT de creación (verification:create)** y el de consulta en **JWT de consulta (verification:get)**, ambos sin `Bearer`; complete el contrato y pulse **Iniciar Verificación**. El demo genera un `userId` de prueba para cada intento. Los JWT se muestran protegidos y permanecen solo en memoria: no se guardan en el perfil Testing.
 
-El formulario empieza vacío. «Guardar Testing» y «Cargar Testing» guardan un perfil local en `AsyncStorage`, que **no es almacenamiento seguro para secretos de producción**. La pantalla muestra los errores en un campo seleccionable, bloquea pulsaciones repetidas y respeta el área segura en ambas plataformas. Usa `preventScreenCapture: false` solo para pruebas; el bridge y el ejemplo mínimo usan `true` por defecto.
+El indicador «Bridge nativo conectado» confirma el registro del módulo. La licencia, los permisos y los JWT se validan al iniciar el flujo. Debug requiere Metro de este mismo proyecto; Release incorpora JavaScript en la app.
 
 ## Cómo se comunican React Native y la SDK
 
-El código JavaScript envía parámetros a `NativeModules.BecomeModule`. Android implementa ese módulo en Kotlin e iOS en Swift. Cada implementación crea `BDIVConfig`, abre la interfaz de la SDK y transforma su callback en una promesa que vuelve a JavaScript:
-
 ```text
-Pantalla React Native → BecomeModule (Kotlin o Swift) → SDK nativa
-Pantalla React Native ← promesa del bridge ← callback de la SDK
+React Native → BecomeModule (Kotlin o Swift) → interfaz nativa de Become
+React Native ← promesa del bridge ← resultado de la verificación
 ```
 
-Los dos módulos nativos deben exportar el mismo nombre, `BecomeModule`, y el mismo método, `iniciarBecomeSDK`. Así la pantalla React Native usa una sola API en ambas plataformas.
+Ambas plataformas exportan `BecomeModule.iniciarBecomeSDK`. El adaptador TypeScript valida los parámetros, solicita cámara en Android y evita llamadas simultáneas. Cada bridge construye `BDIVConfig`, asigna los tokens antes de iniciar y transforma la respuesta nativa en una promesa.
 
 ## Paso 1 Instalar la SDK en cada proyecto nativo
 
+El demo ya consume la SDK de Android mediante Maven Central y la de iOS mediante Swift Package Manager (SPM). Para reproducir la instalación en otra app React Native, consulte la [guía de Maven Central y SPM](docs/INSTALACION_NATIVA.md), con los bloques de Gradle, los pasos de Xcode y la migración desde archivos locales.
+
 ### Android
 
-Para una nueva integración de AutoCaptureOCR en Android, coloque el AAR y la licencia BlinkID autorizados en las ubicaciones indicadas por la guía nativa. La ruta actual de la licencia Android es `app/src/main/assets/com.become.blinkid.key`; no copie el recurso anterior del demo, `com.become.mb.key`, en una integración nueva.
+El demo consume la distribución publicada desde Maven Central:
 
-Use la [guía de la SDK AutoCaptureOCR para Android](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-Android) como referencia para el AAR, la licencia BlinkID, las dependencias Gradle, las versiones compatibles y la configuración requerida. La licencia está vinculada a los identificadores y al ambiente autorizados; no la reutilice en otra app o variante.
+```groovy
+dependencies {
+    implementation "ai.becomedigital:identity-verification:3.5.1"
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.5"
+}
+```
 
-Revise [`android/app/build.gradle`](android/app/build.gradle) para las dependencias, repositorios, Compose, desugaring y opciones de compilación que necesita esta versión de la SDK. Revise [`android/app/src/main/AndroidManifest.xml`](android/app/src/main/AndroidManifest.xml) para los permisos declarados, especialmente cámara e Internet. El ejemplo también define un timeout de red en [`become_config.xml`](android/app/src/main/res/values/become_config.xml). Integre estos ajustes con los existentes en su app; no sustituya todo su archivo Gradle o manifest por el del demo. El demo usa la firma de depuración de Android también para compilaciones `release`; no incluye una llave de distribución. Configure la firma de producción por separado en su propia app.
+Conserve `google()`, `mavenCentral()` y la configuración de desugaring. El paquete incorpora sus dependencias transitivas; no agregue además el AAR local ni las dependencias anteriores de captura. Revise la [instalación Android](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-Android/blob/main/INSTALACION.md) e incorpore la configuración a su Gradle existente.
 
-Configure su Android SDK y `JAVA_HOME` en la máquina de desarrollo. Si necesita `android/local.properties`, indique allí la ruta `sdk.dir` de su equipo; ese archivo es local y no debe incluirse en un commit.
+Agregue la licencia emitida para su `applicationId` en `android/app/src/main/assets/com.become.blinkid.key`. El archivo está ignorado por Git. La licencia anterior `com.become.mb.key` no se utiliza en esta integración.
+
+Revise los permisos en [AndroidManifest.xml](android/app/src/main/AndroidManifest.xml) y solicite cámara en tiempo de ejecución. El demo usa firma de depuración; configure la firma de producción en su propia app.
 
 ### iOS
 
-Agregue `BDIdentityVerification.xcframework` al target de la app con **Embed & Sign** y el archivo de licencia BlinkID autorizado a **Copy Bundle Resources**. Declare `NSCameraUsageDescription` en `Info.plist`, agregue los paquetes Swift de la SDK y compruebe la firma del target antes de instalar la app en un iPhone.
+El proyecto fija el paquete `https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS.git` en la versión **5.3.2** y enlaza el producto **BDIdentityVerification**. SPM resuelve el binario y las dependencias necesarias; no agregue además el XCFramework local ni productos de captura anteriores.
 
-La integración actual de AutoCaptureOCR para iOS requiere iOS 16.0 o posterior, el framework de Become 1.2.3, BlinkID Core/UX 8002.0.2, Amplify Swift 2.53.3 y Amplify UI Face Liveness 1.4.4; su interfaz nativa usa SwiftUI. Consulte la [guía de la SDK AutoCaptureOCR para iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS) para conocer los productos exactos de los paquetes, el nombre del archivo de licencia y los pasos de migración. Esa guía es la referencia para las dependencias y licencias nativas.
+Agregue su licencia en `ios/Application/Resources/com.become.blinkid.key.txt`. La fase **Copiar licencia local** la incorpora al demo si existe. El archivo está ignorado por Git; su ausencia se informa como `MISSING_LICENSE_FILES` al iniciar. En su propia app, agréguelo al target y a **Copy Bundle Resources**.
 
-La [guía iOS de este repositorio](ios/README_BECOME_IOS.md) identifica los archivos, paquetes y ajustes concretos del ejemplo. Úsela junto con la guía de la SDK nativa; las versiones de su app pueden requerir una resolución distinta.
+Declare `NSCameraUsageDescription` en `Info.plist`. Siga la [instalación iOS](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS/blob/main/INSTALACION.md) y la [guía del bridge iOS](ios/README_BECOME_IOS.md).
 
 ## Paso 2 Registrar el bridge nativo
 
 ### Android
 
-1. Incorpore [`BecomeModule.kt`](android/app/src/main/java/com/becomedigitalapp/BecomeModule.kt), [`SingleFlight.kt`](android/app/src/main/java/com/becomedigitalapp/SingleFlight.kt) y [`BecomePackage.kt`](android/app/src/main/java/com/becomedigitalapp/BecomePackage.kt) al módulo Android de su app. Cambie la declaración `package` y las rutas en los tres archivos según su proyecto. `SingleFlight` impide que un callback repetido o tardío cierre otra solicitud.
-2. Registre `BecomePackage()` en la lista de paquetes de React Native. [`MainApplication.kt`](android/app/src/main/java/com/becomedigitalapp/MainApplication.kt) muestra cómo agregarlo a `PackageList(this).packages`. Al estar dentro de la app y no en una librería React Native publicada, este módulo no se registra por autolinking.
-3. Compruebe que `getName()` devuelve `BecomeModule`. El método `@ReactMethod iniciarBecomeSDK` recibe los parámetros y una `Promise`: resuelve con el resultado o rechaza con un código y mensaje.
-
-Ambos bridges configuran DNI y pasaporte, sin logo personalizado. Son elecciones del demo y deben corresponder al flujo contratado por su app. La API JavaScript no expone todas las opciones de `BDIVConfig`: para agregar otras, actualice ambos bridges, el contrato TypeScript y las pruebas. La configuración avanzada de autenticación permanece en la SDK nativa.
+1. Incorpore [BecomeModule.kt](android/app/src/main/java/com/becomedigitalapp/BecomeModule.kt), [SingleFlight.kt](android/app/src/main/java/com/becomedigitalapp/SingleFlight.kt) y [BecomePackage.kt](android/app/src/main/java/com/becomedigitalapp/BecomePackage.kt). Ajuste la declaración `package` y las rutas a su app.
+2. Registre `BecomePackage()` en la lista de paquetes de React Native, como en [MainApplication.kt](android/app/src/main/java/com/becomedigitalapp/MainApplication.kt). Este módulo local no se registra por autolinking.
+3. Conserve `getName() = "BecomeModule"` y el método `@ReactMethod iniciarBecomeSDK`.
 
 ### iOS
 
-1. Incorpore [`BecomeModule.swift`](ios/BecomeDigitalApp/BecomeModule.swift) y [`BecomeModuleBridge.m`](ios/BecomeDigitalApp/BecomeModuleBridge.m) al target de su app en Xcode. Ambos archivos deben figurar en **Compile Sources**.
-2. `@objc(BecomeModule)` en Swift y `RCT_EXTERN_MODULE(BecomeModule, NSObject)` en Objective-C deben conservar el mismo nombre que usa JavaScript. El archivo `.m` exporta el método; la lógica de la SDK permanece en Swift.
-3. Compruebe que el target puede importar `BDIdentityVerification` y que la licencia está en el bundle. El bridge presenta la UI nativa y escucha `BDIVDelegate`.
-4. Integre el ciclo de vida de escenas y el callback de sesiones de red en segundo plano descritos en la [guía iOS](ios/README_BECOME_IOS.md). No sustituya la lógica propia de su `AppDelegate`.
+1. Incorpore [BecomeModule.swift](ios/BecomeDigitalApp/BecomeModule.swift) y [BecomeModuleBridge.m](ios/BecomeDigitalApp/BecomeModuleBridge.m) al target. Ambos deben estar en **Compile Sources**.
+2. Conserve `@objc(BecomeModule)` y `RCT_EXTERN_MODULE(BecomeModule, NSObject)`.
+3. Compruebe la importación de `BDIdentityVerification` desde los archivos Swift del target, la licencia y el permiso de cámara. Si viene de un bridge previo a la versión `5.3.2`, revise la [firma tipada del delegado iOS](ios/README_BECOME_IOS.md#adaptar-un-bridge-ios-anterior).
+4. Integre el ciclo de vida descrito en la [guía iOS](ios/README_BECOME_IOS.md) con su `AppDelegate` existente.
 
-Después de agregar o cambiar archivos nativos, **vuelva a compilar la app**. Recargar Metro solo actualiza JavaScript y no registra un módulo nativo nuevo.
+Ambos bridges usan onboarding, DNI y pasaporte, y consultan el resultado final. Para exponer otras opciones públicas, actualice ambas implementaciones y el contrato TypeScript. Después de cambiar código o dependencias nativas, vuelva a compilar: recargar Metro no registra un módulo nuevo.
+
+La instalación por Maven Central o SPM conserva el punto de entrada de JavaScript `BecomeModule.iniciarBecomeSDK`. Use el bridge de este repositorio para las versiones nativas indicadas y siga el contrato JWT del paso 3.
 
 ## Paso 3 Llamar al bridge desde React Native
 
-Copie [`src/types/BecomeModule.ts`](src/types/BecomeModule.ts) a su app y ajuste la ruta del `import`. Además de los tipos, contiene validación en ejecución, comprobación del módulo, bloqueo de llamadas simultáneas, solicitud del permiso de cámara en Android y validación de la respuesta. En iOS el bridge solicita cámara de forma nativa. **No instala la SDK ni registra el bridge**: primero deben estar compilados los pasos nativos anteriores. No solicite almacenamiento externo para lanzar este flujo.
+Copie [src/types/BecomeModule.ts](src/types/BecomeModule.ts) y ajuste el `import`. La firma recomendada recibe:
 
 | Parámetro | Tipo | Uso |
 | --- | --- | --- |
-| `clientId` | `string` | Identificador entregado para su integración. |
-| `clientSecret` | `string` | Secreto de la integración; no lo incluya en logs ni en el repositorio. |
-| `contractId` | `string` | Contrato que utilizará la verificación. |
-| `userId` | `string` | Identificador de su usuario o solicitud, elegido por su app. |
-| `preventScreenCapture` | `boolean` opcional | Si se omite, ambas implementaciones usan `true`. |
-
-Ejemplo de llamada desde una pantalla o servicio de su app. Los valores se obtienen de su propia configuración y del usuario actual; no son constantes para copiar:
+| `jwt` | `string` | Token obtenido con `grant_type: verification:create`, sin `Bearer`. |
+| `verificationResultsJwt` | `string` | Token obtenido con `grant_type: verification:get`, sin `Bearer`. |
+| `contractId` | `string` | Contrato autorizado para los dos tokens. |
+| `userId` | `string` | Identificador de su usuario o solicitud. |
+| `preventScreenCapture` | `boolean` opcional | El bridge usa `true` cuando se omite. |
 
 ```ts
-import {Alert} from 'react-native';
-import BecomeModule, {errorDeSDK} from './src/types/BecomeModule'; // Ajuste esta ruta.
+import BecomeModule, {errorDeSDK} from './src/types/BecomeModule';
 
-async function iniciarVerificacion(
-  clientId: string,
-  clientSecret: string,
+async function verificarIdentidad(
+  jwt: string,
+  verificationResultsJwt: string,
   contractId: string,
   userId: string,
 ) {
   try {
-    const result = await BecomeModule.iniciarBecomeSDK({
-      clientId,
-      clientSecret,
+    return await BecomeModule.iniciarBecomeSDK({
+      jwt,
+      verificationResultsJwt,
       contractId,
       userId,
       preventScreenCapture: true,
     });
-
-    if (result.status === 'SUCCES') {
-      // Continúe con el resultado de verificación.
-    } else if (result.status === 'PENDING') {
-      // No trate PENDING como una verificación final.
-    }
-    return result;
-  } catch (error) {
-    const nativeError = errorDeSDK(error);
-    Alert.alert(
-      'No se pudo verificar',
-      nativeError.code + ': ' + nativeError.message,
-    );
-    return null;
+  } catch (cause) {
+    const error = errorDeSDK(cause);
+    // Muestre el código y mensaje; no registre tokens ni datos personales.
+    throw error;
   }
 }
 ```
 
-La promesa resuelta contiene `status`, `message` y `userId`. El tipo compartido incluye `requestId?` y `responseURL?`, pero no debe depender de que ambos valores estén presentes. La SDK escribe el estado de éxito `SUCCES` (así, sin la segunda «s»); el bridge conserva ese valor. `PENDING` no significa identidad verificada.
+La [guía JWT](docs/AUTENTICACION_JWT.md) explica la obtención de tokens desde su backend y su asignación en Kotlin y Swift. No mezcle JWT con `clientId` o `clientSecret`: el bridge rechaza esa combinación. En este ejemplo se exigen los dos tokens porque el flujo incluye la consulta del resultado final.
 
-Los cuatro parámetros de texto deben ser no vacíos; el adaptador elimina espacios en los extremos. `preventScreenCapture` debe ser booleano, no el texto `"false"`. Los estados desconocidos se rechazan como `INVALID_RESPONSE`, nunca como éxito. El bridge conserva el comportamiento de consulta y finalización de la SDK nativa; no implemente polling adicional suponiendo que `PENDING` es un resultado final.
+La respuesta conserva `status`, `message` y `userId`, con `requestId?` y `responseURL?` opcionales. `SUCCES` es el nombre público del estado de éxito; `PENDING` indica un resultado pendiente. El rechazo proporciona `code` y `message`. Android puede informar `USER_CANCELLED`; iOS no expone un callback de cancelación independiente en `BDIVDelegate`.
 
-La promesa rechazada proporciona `code` y `message`. Por ejemplo, `INVALID_PARAMS` indica campos obligatorios vacíos y `SDK_ERROR` propaga un error de la SDK. Android puede devolver `USER_CANCELLED`; el delegado de la SDK iOS no expone una cancelación independiente, por lo que no se debe asumir ese código en ambas plataformas.
+### Ejemplo de un solo botón con JWT
 
-### Ejemplo de un solo botón, sin formulario
+Al pulsar **Iniciar verificación con JWT**, [JWTExample.tsx](examples/JWTExample.tsx) solicita una sesión nueva al backend configurado. Espera los dos JWT, el contrato y el usuario, y entonces inicia la SDK. Consulte el [ejemplo completo de conexión](docs/AUTENTICACION_JWT.md#ejemplo-de-un-solo-botón). Para uso interno, también está disponible la [prueba local de un solo clic](docs/AUTENTICACION_JWT.md#prueba-local-de-un-solo-clic-con-la-api-pública).
 
-[`examples/OneButtonExample.tsx`](examples/OneButtonExample.tsx) recibe las credenciales mediante props, genera un `userId` de prueba, bloquea doble pulsación y muestra resultado/error. En producción use un `userId` ligado a su usuario o solicitud y su propia estrategia de obtención de credenciales.
+**Credenciales para pruebas del demo.** Mantenga los secretos de prueba y producción en el entorno del servicio externo. El repositorio contiene la lógica y la documentación pública de la API. Nunca incluya credenciales ni JWT reales en código, archivos de configuración, ejemplos, pruebas o pull requests. Consulte la [regla para credenciales de prueba](docs/AUTENTICACION_JWT.md#regla-para-las-credenciales-de-prueba).
 
-Si desea una precarga **solo local**, ejecute `npm run setup:local` y complete `config/credentials.local.json`. El comando crea un archivo vacío desde la plantilla y no reemplaza valores existentes. Para usarlo, importe el ejemplo y el archivo local en su propia pantalla:
+### Compatibilidad con credenciales anteriores
 
-```tsx
-import OneButtonExample from './examples/OneButtonExample';
-import credentials from './config/credentials.local.json';
+Seleccione **Credenciales (anterior)** para usar `clientId`, `clientSecret` y `contractId`. La firma nativa está deprecada y se conserva para integraciones existentes. [OneButtonExample.tsx](examples/OneButtonExample.tsx) mantiene esa muestra; para nuevas apps use JWT.
 
-// Dentro de un contenedor que respete el área segura:
-<OneButtonExample credentials={credentials} />;
-```
-
-El demo principal no importa ese archivo: un clon limpio funciona sin configuración secreta. El archivo local está ignorado por Git, pero cualquier secreto importado queda dentro del bundle de la app; **ignorar un archivo no lo convierte en un almacén seguro**. No publique ese bundle ni incluya valores reales en la plantilla. Antes de compartir cambios revise `git diff --cached` y no registre credenciales ni respuestas completas con datos personales.
+Solo este modo ofrece **Guardar Testing** y **Cargar Testing**. El perfil usa `AsyncStorage`, que no es almacenamiento seguro para secretos de producción. Un secreto importado en JavaScript forma parte del bundle de la app.
 
 ## Paso 4 Probar la integración
 
-Compile e instale su app en un Android y un iPhone físicos. Confirme que el módulo existe antes de probar credenciales: si `NativeModules.BecomeModule` es `undefined`, revise el registro y vuelva a compilar la app nativa. Compruebe después permisos, apertura de la UI de la SDK, respuesta exitosa y errores. Muestre el `code` y `message` rechazados para que el usuario o soporte pueda diagnosticar el problema.
+Realice las pruebas funcionales en Android e iPhone físicos con una licencia autorizada y tokens vigentes. Compruebe apertura de la interfaz, cámara, captura documental, validación facial, cancelación, errores y resultado. Use la [guía de validación](docs/VALIDACION.md).
 
-Revise la [guía de validación](docs/VALIDACION.md) para comandos, cobertura automatizada, pruebas manuales y limitaciones conocidas. Que la app compile o que el módulo esté registrado no demuestra que el contrato, el servicio remoto o todo el flujo biométrico funcionen.
+El demo mantiene el campo de error seleccionable y el área segura en ambas plataformas. Su formulario desactiva la protección de pantalla para facilitar pruebas manuales; el bridge y el ejemplo JWT de un botón la activan por defecto.
 
-## Problemas habituales
-
-- **El módulo no aparece en JavaScript:** verifique `BecomePackage()` en Android o la pertenencia de ambos archivos del bridge al target iOS. Haga una compilación nativa nueva.
-- **La SDK no abre:** revise licencias, enlace del AAR o XCFramework, permiso de cámara y una pantalla activa. La ausencia de licencia se rechaza como `MISSING_LICENSE_FILES` en ambas plataformas.
-- **La promesa devuelve un error:** use su `code` y `message`; no sustituya el mensaje de la SDK por un error genérico ni registre `clientSecret`.
-
-| Código | Qué revisar |
-| --- | --- |
-| `SDK_NOT_LINKED` | Registro del módulo/enlace nativo y recompilación. |
-| `INVALID_PARAMS` | Los cuatro textos obligatorios y el tipo booleano de la opción. |
-| `SDK_BUSY` | Hay un flujo abierto; espere su callback antes de reintentar. |
-| `CAMERA_PERMISSION_DENIED` | Permiso de cámara en Ajustes de la app. |
-| `MISSING_CAMERA_PERMISSION` | Declaración `NSCameraUsageDescription` en iOS. |
-| `MISSING_LICENSE_FILES` | Recurso de licencia incluido en el APK/bundle. Su presencia no valida su vigencia. |
-| `NO_ACTIVITY` / `NO_VIEW_CONTROLLER` | App visible y una pantalla válida para presentar la SDK. |
-| `CONFIG_ERROR` / `CALLBACK_ERROR` / `START_AUTH_ERROR` | Configuración, registro del callback o inicio nativo Android. |
-| `USER_CANCELLED` | Cancelación reportada por Android; permita volver a intentar. |
-| `SDK_ERROR` | Error reportado por la SDK; muestre su mensaje sin volcar el payload completo a logs. |
-| `INVALID_RESPONSE` | Respuesta o estado no reconocido; no dar por verificada la identidad. |
-
-Para USB, firmas distintas, Metro y fallos de primera ejecución, consulte [solución de problemas](docs/SOLUCION_DE_PROBLEMAS.md). Las [versiones y artefactos](docs/ARTEFACTOS.md) permiten identificar qué SDK está integrada y qué debe revisar antes de redistribuirla.
-
-Para errores propios de las dependencias y del flujo biométrico, siga las guías de integración de la SDK nativa enlazadas al inicio.
+Para problemas de instalación, Metro, licencia o JWT, consulte [solución de problemas](docs/SOLUCION_DE_PROBLEMAS.md). Las [versiones de integración](docs/ARTEFACTOS.md) permiten comprobar las dependencias seleccionadas.

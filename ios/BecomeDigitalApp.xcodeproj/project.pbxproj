@@ -14,12 +14,7 @@
 		2F421003D91E4A7100D00001 /* BecomeModuleBridge.m in Sources */ = {isa = PBXBuildFile; fileRef = 2F421002D91E4A7100D00001 /* BecomeModuleBridge.m */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
-		BB2321422F66488E005E9EAA /* CaptureUX in Frameworks */ = {isa = PBXBuildFile; productRef = BB2321412F66488E005E9EAA /* CaptureUX */; };
-		BB2321452F66490B005E9EAA /* CaptureCore in Frameworks */ = {isa = PBXBuildFile; productRef = BB2321442F66490B005E9EAA /* CaptureCore */; };
-		BB2321492F664A01005E9EAA /* com.become.document.key.txt in Resources */ = {isa = PBXBuildFile; fileRef = BB2321482F664A01005E9EAA /* com.become.document.key.txt */; };
-		BB9FACFE2F66290600AC371A /* FaceLiveness in Frameworks */ = {isa = PBXBuildFile; productRef = BB9FACFD2F66290600AC371A /* FaceLiveness */; };
-		BBCC86812F68A9C200FE2E81 /* BDIdentityVerification.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = BBCC86802F68A9C200FE2E81 /* BDIdentityVerification.xcframework */; };
-		BBCC86822F68A9C200FE2E81 /* BDIdentityVerification.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = BBCC86802F68A9C200FE2E81 /* BDIdentityVerification.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		BB2321422F66488E005E9EAA /* BDIdentityVerification in Frameworks */ = {isa = PBXBuildFile; productRef = BB2321412F66488E005E9EAA /* BDIdentityVerification */; };
 		E45D3B02EB4F11C17FDC35F7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D2E409BC99EBA9623E09A6D1 /* Foundation.framework */; };
 		F5518666DF0CAE6B9110D746 /* BridgeLaunchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F44BA9A26FB6F82C0CF5C90 /* BridgeLaunchTests.swift */; };
 /* End PBXBuildFile section */
@@ -34,20 +29,6 @@
 		};
 /* End PBXContainerItemProxy section */
 
-/* Begin PBXCopyFilesBuildPhase section */
-		2F421005D91E4A7100D00001 /* Embed Frameworks */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 10;
-			files = (
-				BBCC86822F68A9C200FE2E81 /* BDIdentityVerification.xcframework in Embed Frameworks */,
-			);
-			name = "Embed Frameworks";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* BecomeDigitalApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BecomeDigitalApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = BecomeDigitalApp/Images.xcassets; sourceTree = "<group>"; };
@@ -61,8 +42,6 @@
 		6F44BA9A26FB6F82C0CF5C90 /* BridgeLaunchTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BridgeLaunchTests.swift; path = BecomeDigitalAppUITests/BridgeLaunchTests.swift; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = BecomeDigitalApp/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = BecomeDigitalApp/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		BB2321482F664A01005E9EAA /* com.become.document.key.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = com.become.document.key.txt; sourceTree = "<group>"; };
-		BBCC86802F68A9C200FE2E81 /* BDIdentityVerification.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = BDIdentityVerification.xcframework; path = BecomeDigitalApp/Frameworks/BDIdentityVerification.xcframework; sourceTree = "<group>"; };
 		D2E409BC99EBA9623E09A6D1 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		D609514B4AB7F8945B682BD3 /* BecomeDigitalAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BecomeDigitalAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -74,10 +53,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0C80B921A6F3F58F76C31292 /* libPods-BecomeDigitalApp.a in Frameworks */,
-				BBCC86812F68A9C200FE2E81 /* BDIdentityVerification.xcframework in Frameworks */,
-				BB2321452F66490B005E9EAA /* CaptureCore in Frameworks */,
-				BB2321422F66488E005E9EAA /* CaptureUX in Frameworks */,
-				BB9FACFE2F66290600AC371A /* FaceLiveness in Frameworks */,
+				BB2321422F66488E005E9EAA /* BDIdentityVerification in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -110,7 +86,6 @@
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				BBCC86802F68A9C200FE2E81 /* BDIdentityVerification.xcframework */,
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				5DCACB8F33CDC322A6C60F78 /* libPods-BecomeDigitalApp.a */,
 				8E7B7006652E51BFBFF4A942 /* iOS */,
@@ -168,7 +143,6 @@
 		BB2321472F664990005E9EAA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				BB2321482F664A01005E9EAA /* com.become.document.key.txt */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -192,17 +166,20 @@
 				C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
-				2F421005D91E4A7100D00001 /* Embed Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				00EEFC60759A1932668264C0 /* [CP] Embed Pods Frameworks */,
 				E235C05ADACE081382539298 /* [CP] Copy Pods Resources */,
+				2F421005D91E4A7100D00001 /* Copiar licencia local */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			name = BecomeDigitalApp;
+			packageProductDependencies = (
+				BB2321412F66488E005E9EAA /* BDIdentityVerification */,
+			);
 			productName = BecomeDigitalApp;
 			productReference = 13B07F961A680F5B00A75B9A /* BecomeDigitalApp.app */;
 			productType = "com.apple.product-type.application";
@@ -252,10 +229,7 @@
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			packageReferences = (
-				BB9FACFB2F66285600AC371A /* XCRemoteSwiftPackageReference "amplify-swift" */,
-				BB9FACFC2F66290600AC371A /* XCRemoteSwiftPackageReference "amplify-ui-swift-liveness" */,
-				BB2321402F66488E005E9EAA /* XCRemoteSwiftPackageReference "capture-ux-sp" */,
-				BB2321432F66490B005E9EAA /* XCRemoteSwiftPackageReference "capture-core-sp" */,
+				BB2321402F66488E005E9EAA /* XCRemoteSwiftPackageReference "BecomeDigitalSDKAutoCaptureOCR-iOS" */,
 			);
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
@@ -280,7 +254,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
-				BB2321492F664A01005E9EAA /* com.become.document.key.txt in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				1F74CAD18B3AF7A61502B270 /* PrivacyInfo.xcprivacy in Resources */,
 			);
@@ -320,6 +293,22 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BecomeDigitalApp/Pods-BecomeDigitalApp-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		2F421005D91E4A7100D00001 /* Copiar licencia local */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Copiar licencia local";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nlicense_path=\"${SRCROOT}/Application/Resources/com.become.blinkid.key.txt\"\nlicense_output=\"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/com.become.blinkid.key.txt\"\nif [ -f \"$license_path\" ]; then\n  cp \"$license_path\" \"$license_output\"\nelse\n  rm -f \"$license_output\"\nfi\n";
 			showEnvVarsInLog = 0;
 		};
 		C38B50BA6285516D6DCD4F65 /* [CP] Check Pods Manifest.lock */ = {
@@ -427,7 +416,7 @@
 				DEVELOPMENT_TEAM = 9FBDU3DDSJ;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = BecomeDigitalApp/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -457,7 +446,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 9FBDU3DDSJ;
 				INFOPLIST_FILE = BecomeDigitalApp/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -526,7 +515,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,
 					"$(inherited)",
@@ -601,7 +590,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,
 					"$(inherited)",
@@ -690,55 +679,21 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		BB2321402F66488E005E9EAA /* XCRemoteSwiftPackageReference "capture-ux-sp" */ = {
+		BB2321402F66488E005E9EAA /* XCRemoteSwiftPackageReference "BecomeDigitalSDKAutoCaptureOCR-iOS" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/BlinkID/capture-ux-sp";
+			repositoryURL = "https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS.git";
 			requirement = {
 				kind = exactVersion;
-				version = 1.4.3;
-			};
-		};
-		BB2321432F66490B005E9EAA /* XCRemoteSwiftPackageReference "capture-core-sp" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/BlinkID/capture-core-sp";
-			requirement = {
-				kind = exactVersion;
-				version = 1.4.3;
-			};
-		};
-		BB9FACFB2F66285600AC371A /* XCRemoteSwiftPackageReference "amplify-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/aws-amplify/amplify-swift";
-			requirement = {
-				kind = exactVersion;
-				version = 2.53.3;
-			};
-		};
-		BB9FACFC2F66290600AC371A /* XCRemoteSwiftPackageReference "amplify-ui-swift-liveness" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/aws-amplify/amplify-ui-swift-liveness";
-			requirement = {
-				kind = exactVersion;
-				version = 1.4.4;
+				version = 5.3.2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		BB2321412F66488E005E9EAA /* CaptureUX */ = {
+		BB2321412F66488E005E9EAA /* BDIdentityVerification */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = BB2321402F66488E005E9EAA /* XCRemoteSwiftPackageReference "capture-ux-sp" */;
-			productName = CaptureUX;
-		};
-		BB2321442F66490B005E9EAA /* CaptureCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BB2321432F66490B005E9EAA /* XCRemoteSwiftPackageReference "capture-core-sp" */;
-			productName = CaptureCore;
-		};
-		BB9FACFD2F66290600AC371A /* FaceLiveness */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = BB9FACFC2F66290600AC371A /* XCRemoteSwiftPackageReference "amplify-ui-swift-liveness" */;
-			productName = FaceLiveness;
+			package = BB2321402F66488E005E9EAA /* XCRemoteSwiftPackageReference "BecomeDigitalSDKAutoCaptureOCR-iOS" */;
+			productName = BDIdentityVerification;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

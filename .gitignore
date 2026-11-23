@@ -35,3 +35,7 @@ vendor/bundle/
 /artifacts/
 /coverage/
 **/.xcode.env.local
+
+# Licencias entregadas para esta app; se agregan únicamente en el equipo local.
+/android/app/src/main/assets/com.become.blinkid.key
+/ios/Application/Resources/com.become.blinkid.key.txt

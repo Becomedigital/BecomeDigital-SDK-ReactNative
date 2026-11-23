@@ -19,6 +19,7 @@ class BecomeBridgeDeviceTest {
         device.executeShellCommand("am start -n com.becomedigitalapp/.MainActivity")
         assertTrue("No apareció el bridge en la pantalla React Native.",
             device.wait(Until.hasObject(By.textContains("Bridge nativo conectado")), 60_000))
+        device.findObject(By.text("Credenciales (anterior)"))?.click()
         val button = device.wait(Until.findObject(By.desc("Iniciar verificación")), 10_000)
         assertTrue("No apareció el botón JavaScript.", button != null)
         // No success is reported if credentials are absent: JUnit marks this test skipped.
