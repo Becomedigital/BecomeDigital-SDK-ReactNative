@@ -1,13 +1,29 @@
 import {NativeModules, PermissionsAndroid, Platform} from 'react-native';
 
-export interface BecomeSDKParams {
-  clientId: string;
-  clientSecret: string;
+interface BecomeSDKCommonParams {
   contractId: string;
   userId: string;
-  /** Defaults to true. Disable only for an authorized test. */
+  /** Se activa por defecto. Desactive solo para una prueba autorizada. */
   preventScreenCapture?: boolean;
 }
+
+/** Tokens recibidos del backend, sin el prefijo Bearer. */
+export interface BecomeSDKJWTParams extends BecomeSDKCommonParams {
+  jwt: string;
+  verificationResultsJwt: string;
+  clientId?: never;
+  clientSecret?: never;
+}
+
+/** Compatibilidad con integraciones anteriores; no usar en nuevas apps. */
+export interface BecomeSDKCredentialsParams extends BecomeSDKCommonParams {
+  clientId: string;
+  clientSecret: string;
+  jwt?: never;
+  verificationResultsJwt?: never;
+}
+
+export type BecomeSDKParams = BecomeSDKJWTParams | BecomeSDKCredentialsParams;
 
 export interface BecomeSDKResult {
   status: 'SUCCES' | 'PENDING';
@@ -52,12 +68,29 @@ const BecomeModule: BecomeModuleInterface = {
     if (!native || !bridgeDisponible()) {
       throw new BecomeBridgeError('SDK_NOT_LINKED', 'Registra BecomeModule en el proyecto nativo y vuelve a compilar.');
     }
-    const fields = ['clientId', 'clientSecret', 'contractId', 'userId'] as const;
+    const fields = ['contractId', 'userId'] as const;
     if (!params || !fields.every(key =>
       typeof params[key] === 'string' && params[key].trim().length > 0,
     ) || (params.preventScreenCapture != null && typeof params.preventScreenCapture !== 'boolean')) {
-      throw new BecomeBridgeError('INVALID_PARAMS', 'Los cuatro campos son obligatorios y deben ser texto; preventScreenCapture debe ser booleano.');
+      throw new BecomeBridgeError('INVALID_PARAMS', 'contractId y userId son obligatorios y deben ser texto; preventScreenCapture debe ser booleano.');
     }
+    const usesJWT = params.jwt !== undefined || params.verificationResultsJwt !== undefined;
+    const usesCredentials = params.clientId !== undefined || params.clientSecret !== undefined;
+    if (usesJWT === usesCredentials) {
+      throw new BecomeBridgeError('INVALID_PARAMS', 'Use los dos JWT o las credenciales anteriores, sin mezclar los métodos de acceso.');
+    }
+    const authFields = usesJWT ? ['jwt', 'verificationResultsJwt'] as const : ['clientId', 'clientSecret'] as const;
+    if (!authFields.every(key => typeof params[key] === 'string' && params[key].trim().length > 0)) {
+      throw new BecomeBridgeError('INVALID_PARAMS', usesJWT
+        ? 'jwt y verificationResultsJwt son obligatorios y deben ser texto.'
+        : 'clientId y clientSecret son obligatorios y deben ser texto.');
+    }
+    if (usesJWT && [params.jwt, params.verificationResultsJwt].some(token => /^Bearer(?:\s|$)/i.test(token!.trim()))) {
+      throw new BecomeBridgeError('INVALID_PARAMS', 'Entregue ambos JWT sin el prefijo Bearer.');
+    }
+    const authentication = usesJWT
+      ? {jwt: params.jwt!.trim(), verificationResultsJwt: params.verificationResultsJwt!.trim()}
+      : {clientId: params.clientId!.trim(), clientSecret: params.clientSecret!.trim()};
     if (active) {
       throw new BecomeBridgeError('SDK_BUSY', 'Ya existe una verificación en curso.');
     }
@@ -70,8 +103,7 @@ const BecomeModule: BecomeModuleInterface = {
         }
       }
       const result = await native.iniciarBecomeSDK({
-        clientId: params.clientId.trim(),
-        clientSecret: params.clientSecret.trim(),
+        ...authentication,
         contractId: params.contractId.trim(),
         userId: params.userId.trim(),
         preventScreenCapture: params.preventScreenCapture ?? true,

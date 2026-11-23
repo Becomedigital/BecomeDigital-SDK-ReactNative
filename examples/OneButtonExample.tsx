@@ -1,10 +1,10 @@
 import React, {useRef, useState} from 'react';
 import {Button, Text, View} from 'react-native';
-import BecomeModule, {BecomeSDKParams, bridgeDisponible, errorDeSDK} from '../src/types/BecomeModule';
+import BecomeModule, {BecomeSDKCredentialsParams, bridgeDisponible, errorDeSDK} from '../src/types/BecomeModule';
 
-/** Supply test credentials from your own configuration. Never commit real values. */
+/** Ejemplo anterior con credenciales. Para nuevas apps, consulte JWTExample. */
 export default function OneButtonExample({credentials}: {
-  credentials: Pick<BecomeSDKParams, 'clientId' | 'clientSecret' | 'contractId'>;
+  credentials: Pick<BecomeSDKCredentialsParams, 'clientId' | 'clientSecret' | 'contractId'>;
 }) {
   const active = useRef(false);
   const [busy, setBusy] = useState(false);
