@@ -28,12 +28,24 @@ class BecomeModule(private val context: ReactApplicationContext) : ReactContextB
             promise.reject("SDK_BUSY", "Ya existe una verificación en curso.")
             return
         }
-        val values = listOf("clientId", "clientSecret", "contractId", "userId").map { key ->
+        fun text(key: String): String =
             if (params.hasKey(key) && !params.isNull(key) && params.getType(key) == ReadableType.String)
                 params.getString(key)?.trim().orEmpty() else ""
+        val jwtMode = params.hasKey("jwt") || params.hasKey("verificationResultsJwt")
+        val credentialMode = params.hasKey("clientId") || params.hasKey("clientSecret")
+        if (jwtMode == credentialMode) {
+            promise.reject("INVALID_PARAMS", "Use los dos JWT o las credenciales anteriores, sin mezclar los métodos de acceso.")
+            return
         }
+        val fields = if (jwtMode) listOf("jwt", "verificationResultsJwt", "contractId", "userId")
+            else listOf("clientId", "clientSecret", "contractId", "userId")
+        val values = fields.map { text(it) }
         if (values.any { it.isBlank() }) {
-            promise.reject("INVALID_PARAMS", "clientId, clientSecret, contractId y userId son requeridos y deben ser texto.")
+            promise.reject("INVALID_PARAMS", "${fields.joinToString(", ")} son requeridos y deben ser texto.")
+            return
+        }
+        if (jwtMode && values.take(2).any { Regex("^Bearer(?:\\s|$)", RegexOption.IGNORE_CASE).containsMatchIn(it) }) {
+            promise.reject("INVALID_PARAMS", "Entregue ambos JWT sin el prefijo Bearer.")
             return
         }
         var preventCapture = true
@@ -50,9 +62,9 @@ class BecomeModule(private val context: ReactApplicationContext) : ReactContextB
             return
         }
         try {
-            context.assets.open("com.become.mb.key").use { }
+            context.assets.open("com.become.blinkid.key").use { }
         } catch (_: Exception) {
-            promise.reject("MISSING_LICENSE_FILES", "Falta com.become.mb.key en app/src/main/assets.")
+            promise.reject("MISSING_LICENSE_FILES", "Falta com.become.blinkid.key en app/src/main/assets.")
             return
         }
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -60,12 +72,22 @@ class BecomeModule(private val context: ReactApplicationContext) : ReactContextB
             return
         }
 
-        val (clientId, clientSecret, contractId, userId) = values
+        val (primary, secondary, contractId, userId) = values
         val request = requests.begin(promise) ?: return
         val config: BDIVConfig
         try {
-            config = BDIVConfig(clientId, clientSecret, contractId,
-                arrayOf(DocumetType.DNI, DocumetType.PASSPORT), true, userId, null)
+            config = if (jwtMode) {
+                BDIVConfig(primary, contractId,
+                    arrayOf(DocumetType.DNI, DocumetType.PASSPORT), true, userId).apply {
+                    verificationResultsJwt = secondary
+                }
+            } else {
+                BDIVConfig(primary, secondary, contractId,
+                    arrayOf(DocumetType.DNI, DocumetType.PASSPORT), true, userId)
+            }
+            config.flow = BDIVConfig.Flow.Onboarding
+            config.setPerformVerificationCheck(true)
+            config.setDebugLogsEnabled(false)
             config.setPreventScreenCapture(preventCapture)
         } catch (_: Exception) {
             reject(request, "CONFIG_ERROR", "No fue posible construir la configuración de la SDK.")

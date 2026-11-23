@@ -39,4 +39,16 @@ class BecomeModuleValidationTest {
     @Test fun rejectsMissingActivity() {
         rejects(JavaOnlyMap.of("clientId", "test", "clientSecret", "test", "contractId", "2", "userId", "test"), "NO_ACTIVITY")
     }
+    @Test fun rejectsMissingResultsJwt() {
+        rejects(JavaOnlyMap.of("jwt", "creation-test-only", "contractId", "2", "userId", "test"), "INVALID_PARAMS")
+    }
+    @Test fun rejectsMixedAuthentication() {
+        rejects(JavaOnlyMap.of("jwt", "creation-test-only", "verificationResultsJwt", "results-test-only", "clientId", "test", "contractId", "2", "userId", "test"), "INVALID_PARAMS")
+    }
+    @Test fun rejectsBearerPrefix() {
+        rejects(JavaOnlyMap.of("jwt", "Bearer creation-test-only", "verificationResultsJwt", "results-test-only", "contractId", "2", "userId", "test"), "INVALID_PARAMS")
+    }
+    @Test fun acceptsJwtBeforeCheckingActivity() {
+        rejects(JavaOnlyMap.of("jwt", "creation-test-only", "verificationResultsJwt", "results-test-only", "contractId", "2", "userId", "test"), "NO_ACTIVITY")
+    }
 }

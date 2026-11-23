@@ -42,6 +42,14 @@ final class BecomeModule: NSObject {
     let clientSecret = (params["clientSecret"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     let contractId = (params["contractId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     let userId = (params["userId"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    let jwtMode = params["jwt"] != nil || params["verificationResultsJwt"] != nil
+    let credentialMode = params["clientId"] != nil || params["clientSecret"] != nil
+    guard jwtMode != credentialMode else {
+      reject("INVALID_PARAMS", "Use los dos JWT o las credenciales anteriores, sin mezclar los métodos de acceso.", nil)
+      return
+    }
+    let jwt = (params["jwt"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    let resultsJwt = (params["verificationResultsJwt"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     if let option = params["preventScreenCapture"], !(option is NSNull) {
       guard let number = option as? NSNumber, CFGetTypeID(number) == CFBooleanGetTypeID() else {
         reject("INVALID_PARAMS", "preventScreenCapture debe ser booleano.", nil)
@@ -50,8 +58,15 @@ final class BecomeModule: NSObject {
     }
     let preventScreenCapture = (params["preventScreenCapture"] as? NSNumber)?.boolValue ?? true
 
-    guard !clientId.isEmpty, !clientSecret.isEmpty, !contractId.isEmpty, !userId.isEmpty else {
-      reject("INVALID_PARAMS", "clientId, clientSecret, contractId y userId son requeridos.", nil)
+    let authIsValid = jwtMode ? (!jwt.isEmpty && !resultsJwt.isEmpty) : (!clientId.isEmpty && !clientSecret.isEmpty)
+    guard authIsValid, !contractId.isEmpty, !userId.isEmpty else {
+      reject("INVALID_PARAMS", "Complete los dos JWT o las credenciales anteriores, además de contractId y userId.", nil)
+      return
+    }
+    if jwtMode && [jwt, resultsJwt].contains(where: {
+      $0.range(of: "^Bearer(?:\\s|$)", options: [.regularExpression, .caseInsensitive]) != nil
+    }) {
+      reject("INVALID_PARAMS", "Entregue ambos JWT sin el prefijo Bearer.", nil)
       return
     }
 
@@ -61,7 +76,7 @@ final class BecomeModule: NSObject {
     }
 
     let requiredLicenseFiles = [
-      "com.become.document.key.txt",
+      "com.become.blinkid.key.txt",
     ]
 
     let missingLicenseFiles = requiredLicenseFiles.filter { fileName in
@@ -97,16 +112,23 @@ final class BecomeModule: NSObject {
     pendingResolve = resolve
     pendingReject = reject
 
-    let config = BDIVConfig(
-      clienId: clientId,
-      clientSecret: clientSecret,
-      contractId: contractId,
-      documenTypes: [.DNI, .PASSPORT],
-      userId: userId,
-      customerLogo: "",
-      customLocalizationFileName: "MBLocalizable",
-      preventScreenCapture: preventScreenCapture
-    )
+    var config: BDIVConfig
+    if jwtMode {
+      config = BDIVConfig(
+        jwt: jwt, contractId: contractId,
+        documenTypes: [.DNI, .PASSPORT], userId: userId,
+        performVerificationCheck: true, flow: .Onboarding,
+        preventScreenCapture: preventScreenCapture
+      )
+      config.verificationResultsJwt = resultsJwt
+    } else {
+      config = BDIVConfig(
+        clienId: clientId, clientSecret: clientSecret, contractId: contractId,
+        documenTypes: [.DNI, .PASSPORT], userId: userId,
+        performVerificationCheck: true, flow: .Onboarding,
+        preventScreenCapture: preventScreenCapture
+      )
+    }
 
     let hostController = BecomeSDKHostViewController(
       config: config,
@@ -238,17 +260,9 @@ private final class BecomeSDKHostViewController: UIViewController {
 }
 
 extension BecomeSDKHostViewController: BDIVDelegate {
-  func BDIVResponseSuccess(bdivResult: AnyObject) {
-    guard let response = bdivResult as? BDIdentityVerificationResponse else {
-      completeWithError(
-        code: "INVALID_RESPONSE",
-        message: "No fue posible interpretar la respuesta del SDK."
-      )
-      return
-    }
-
+  nonisolated func BDIVResponseSuccess(bdivResult: BDIdentityVerificationResponse) {
     let status: String
-    switch response.responseStatus {
+    switch bdivResult.responseStatus {
     case .SUCCES:
       status = "SUCCES"
     case .ERROR:
@@ -260,11 +274,18 @@ extension BecomeSDKHostViewController: BDIVDelegate {
     @unknown default:
       status = "UNKNOWN"
     }
+    let message = bdivResult.message
+    let responseURL = bdivResult.verification?.urlGetData
+    DispatchQueue.main.async { [weak self] in
+      self?.handleResponse(status: status, message: message, responseURL: responseURL)
+    }
+  }
 
-    if response.responseStatus == .ERROR || response.responseStatus == .NOFOUND {
+  private func handleResponse(status: String, message: String, responseURL: String?) {
+    if status == "ERROR" || status == "NOFOUND" {
       completeWithError(
         code: "SDK_ERROR",
-        message: response.message.isEmpty ? "La verificacion finalizo con error." : response.message
+        message: message.isEmpty ? "La verificación finalizó con error." : message
       )
       return
     }
@@ -275,11 +296,11 @@ extension BecomeSDKHostViewController: BDIVDelegate {
     }
     var payload: [String: Any] = [
       "status": status,
-      "message": response.message.isEmpty ? "Verificacion completada." : response.message,
+      "message": message.isEmpty ? "Verificación completada." : message,
       "userId": userId,
     ]
-    // Keep the optional field for compatibility, without inventing an empty URL.
-    if let url = response.responseDictionary?["responseURL"] as? String, !url.isEmpty {
+    // Conserva el campo opcional sin inventar una URL vacía.
+    if let url = responseURL, !url.isEmpty {
       payload["responseURL"] = url
     }
 
@@ -288,11 +309,13 @@ extension BecomeSDKHostViewController: BDIVDelegate {
     }
   }
 
-  func BDIVResponseError(error: String) {
-    completeWithError(
-      code: "SDK_ERROR",
-      message: error.isEmpty ? "Ocurrio un error desconocido en el SDK." : error
-    )
+  nonisolated func BDIVResponseError(error: String) {
+    DispatchQueue.main.async { [weak self] in
+      self?.completeWithError(
+        code: "SDK_ERROR",
+        message: error.isEmpty ? "Ocurrió un error desconocido en la SDK." : error
+      )
+    }
   }
 
   private func completeWithError(code: String, message: String) {

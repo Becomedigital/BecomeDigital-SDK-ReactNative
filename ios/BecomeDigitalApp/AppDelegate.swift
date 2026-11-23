@@ -24,7 +24,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     completionHandler: @escaping () -> Void
   ) {
     if !BecomeDigitalSDK.handleEventsForBackgroundURLSession(identifier, completionHandler: completionHandler) {
-      // This demo has no other background-session owner. Route other owners here in a client app.
+      // Este demo no tiene otros propietarios de sesiones en segundo plano.
       completionHandler()
     }
   }
