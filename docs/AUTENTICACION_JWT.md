@@ -11,9 +11,27 @@ El backend consume `POST /auth` de Become Digital con `client_id`, `client_secre
 | Crear la verificación | `verification:create` | `jwt` |
 | Consultar el resultado final | `verification:get` | `verificationResultsJwt` |
 
-Consulte la [autenticación de la API](https://becomedigital.gitbook.io/kyc_api_es/authentication) y el [endpoint de obtención de tokens](https://becomedigital.gitbook.io/kyc_api_es/endpoints/auth) para los detalles del servicio. Entregue los dos JWT sin el prefijo `Bearer` y para el mismo ambiente y contrato de la integración.
+Este es el formato público de la solicitud que hace el servidor. Los valores que comienzan con «your» son marcadores de posición.
 
-La aplicación no debe consumir `/auth` con las credenciales de Become Digital. Implemente en su backend una operación autenticada para preparar la sesión de verificación y entregar los tokens a su app.
+```http
+POST /api/v1/auth
+Host: api.svi.becomedigital.net
+Content-Type: application/json
+
+{
+  "client_id": "your client ID here...",
+  "client_secret": "your key here...",
+  "grant_type": "verification:create"
+}
+```
+
+Repita la solicitud con `verification:get`. Tome `access_token` de cada respuesta y entregue los dos JWT sin el prefijo `Bearer`, para el mismo ambiente y contrato. El servicio de sesión autentica al usuario de la app, resuelve el contrato y el usuario de la verificación, obtiene ambos tokens y los devuelve juntos. Consulte la [autenticación pública de la API](https://becomedigital.gitbook.io/kyc_api_es/authentication) y el [endpoint de obtención de tokens](https://becomedigital.gitbook.io/kyc_api_es/endpoints/auth).
+
+## Regla para las credenciales de prueba
+
+Mantenga la capa de credenciales de todas las pruebas de este ejemplo fuera del repositorio React Native. Configure `client_id`, `client_secret` y otros secretos en un gestor de secretos o en el entorno del servicio externo, también durante las pruebas locales. En Git publique únicamente la lógica, el contrato público y ejemplos con marcadores de posición.
+
+Nunca incluya credenciales ni JWT reales en código, configuraciones del móvil, archivos de ejemplo, datos de pruebas, capturas, logs, commits o pull requests. Un archivo ignorado por Git también expone el secreto si la app lo importa y lo incluye en su bundle. Use esta misma regla para las funcionalidades que se agreguen al demo en el futuro.
 
 ## Ejecutar la muestra del demo
 
@@ -27,30 +45,49 @@ Los campos JWT están protegidos y permanecen solo en memoria. No se guardan med
 
 ## Ejemplo de un solo botón
 
-[JWTExample.tsx](../examples/JWTExample.tsx) recibe una función `getSession` que su aplicación implementa. El siguiente ejemplo define un contrato de respuesta para **su propio backend**; la dirección es ilustrativa y no es un endpoint de Become Digital:
+[JWTExample.tsx](../examples/JWTExample.tsx) ejecuta `POST` a la `sessionEndpoint` HTTPS de su backend cuando se pulsa **Iniciar verificación con JWT**. La solicitud no lleva cuerpo. El servicio determina el contexto a partir de la sesión de la app y responde con `Content-Type: application/json` y `Cache-Control: no-store`. Los cuatro campos de este contrato son texto:
+
+| Campo | Valor esperado |
+| --- | --- |
+| `jwt` | `access_token` obtenido con `verification:create` |
+| `verificationResultsJwt` | `access_token` obtenido con `verification:get` |
+| `contractId` | Contrato autorizado para ambos tokens |
+| `userId` | Identificador del usuario o de la solicitud de verificación |
+
+Monte el componente en una pantalla que respete el área segura. Para probarlo en este demo, puede renderizarlo en una copia local de `App.tsx` dentro de `SafeAreaProvider` y un `SafeAreaView`. Proporcione la URL de su servicio y, si la app usa un token de sesión, adjúntelo con su cliente HTTP:
 
 ```tsx
-import JWTExample, {BecomeJWTSession} from './examples/JWTExample';
+import JWTExample from './examples/JWTExample';
 
-async function obtenerSesionDesdeSuBackend(): Promise<BecomeJWTSession> {
-  // Use el cliente HTTP y la autenticación de sesión propios de su aplicación.
-  const response = await fetch(
-    'https://backend-de-su-app.example/sesion-verificacion',
-    {method: 'POST', headers: {'Content-Type': 'application/json'}},
+function Verificacion({
+  urlDeSesion,
+  tokenDeUsuario,
+}: {
+  urlDeSesion: string;
+  tokenDeUsuario: string;
+}) {
+  return (
+    <JWTExample
+      sessionEndpoint={urlDeSesion}
+      request={(url, options) => {
+        const headers = new Headers(options.headers);
+        headers.set('Authorization', 'Bearer ' + tokenDeUsuario);
+        return fetch(url, {...options, headers});
+      }}
+    />
   );
-  if (!response.ok) {
-    throw new Error('No fue posible preparar la verificación.');
-  }
-  return response.json();
 }
-
-// Dentro de una pantalla que respete el área segura:
-<JWTExample getSession={obtenerSesionDesdeSuBackend} />;
 ```
 
-La respuesta de su backend debe contener `jwt`, `verificationResultsJwt`, `contractId` y `userId`, todos como texto. Es el contrato de esta muestra, no el formato de respuesta del endpoint `/auth`.
+La URL proviene de la configuración de su app. `tokenDeUsuario` proviene de su autenticación en tiempo de ejecución. El encabezado `Authorization` identifica al usuario ante el backend. Los dos JWT que llegan a la SDK se entregan sin el prefijo `Bearer`. Si su app ya tiene una función autenticada para obtener esa sesión, puede pasarla mediante `getSession`.
 
-El componente obtiene una sesión en cada pulsación, llama a `iniciarBecomeSDK` y muestra `SUCCES`, `PENDING` o el error. Los JWT no se muestran en el resultado ni se guardan. El bloqueo de doble pulsación abarca tanto la obtención de la sesión como la ejecución nativa.
+El botón espera una respuesta válida antes de llamar a `iniciarBecomeSDK` y evita pulsaciones repetidas durante la solicitud y la verificación. Ante un error de red, una demora superior a 15 segundos, un estado HTTP de error o una respuesta inválida, muestra un mensaje del servicio y permite volver a intentar. Los JWT permanecen en memoria durante el intento.
+
+## Prueba local de un solo clic con la API pública
+
+Para una ejecución privada del demo, `JWTExample` admite `getTestCredentials` como proveedor temporal. Al pulsar el botón, la vista lee `clientId`, `clientSecret` y `contractId` suministrados por el entorno de la prueba. Envía dos solicitudes a `https://api.svi.becomedigital.net/api/v1/auth`, una por cada permiso, y espera ambos `access_token` antes de llamar a `iniciarBecomeSDK`. Cada intento genera un `userId` de prueba.
+
+Cargue las credenciales de esta variante solo en el proceso local de prueba. Manténgalas fuera del repositorio, de los archivos que empaqueta Metro y de la configuración persistente de la app. El código del ejemplo conserva únicamente la URL pública y el formato de la solicitud. Para la integración que se distribuye a clientes, el intercambio de credenciales se realiza en el backend de la aplicación. Consulte la [guía pública de autenticación](https://becomedigital.gitbook.io/kyc_api_es/authentication).
 
 ## Configurar el bridge Android
 

@@ -148,13 +148,15 @@ La respuesta conserva `status`, `message` y `userId`, con `requestId?` y `respon
 
 ### Ejemplo de un solo botón con JWT
 
-[examples/JWTExample.tsx](examples/JWTExample.tsx) recibe `getSession`, una función de su app que obtiene los dos JWT y el contexto de verificación desde su backend. La invoca en cada intento, bloquea dobles pulsaciones y muestra el resultado o error. Consulte el [ejemplo completo de conexión](docs/AUTENTICACION_JWT.md#ejemplo-de-un-solo-botón).
+Al pulsar **Iniciar verificación con JWT**, [JWTExample.tsx](examples/JWTExample.tsx) solicita una sesión nueva al backend configurado. Espera los dos JWT, el contrato y el usuario, y entonces inicia la SDK. Consulte el [ejemplo completo de conexión](docs/AUTENTICACION_JWT.md#ejemplo-de-un-solo-botón). Para uso interno, también está disponible la [prueba local de un solo clic](docs/AUTENTICACION_JWT.md#prueba-local-de-un-solo-clic-con-la-api-pública).
+
+**Credenciales para pruebas del demo.** Mantenga los secretos de prueba y producción en el entorno del servicio externo. El repositorio contiene la lógica y la documentación pública de la API. Nunca incluya credenciales ni JWT reales en código, archivos de configuración, ejemplos, pruebas o pull requests. Consulte la [regla para credenciales de prueba](docs/AUTENTICACION_JWT.md#regla-para-las-credenciales-de-prueba).
 
 ### Compatibilidad con credenciales anteriores
 
 Seleccione **Credenciales (anterior)** para usar `clientId`, `clientSecret` y `contractId`. La firma nativa está deprecada y se conserva para integraciones existentes. [OneButtonExample.tsx](examples/OneButtonExample.tsx) mantiene esa muestra; para nuevas apps use JWT.
 
-Solo este modo ofrece **Guardar Testing** y **Cargar Testing**. El perfil usa `AsyncStorage`, que no es almacenamiento seguro para secretos de producción. `npm run setup:local` prepara la plantilla local opcional `config/credentials.local.json`; el demo principal no la importa. Un secreto importado en JavaScript forma parte del bundle de la app.
+Solo este modo ofrece **Guardar Testing** y **Cargar Testing**. El perfil usa `AsyncStorage`, que no es almacenamiento seguro para secretos de producción. Un secreto importado en JavaScript forma parte del bundle de la app.
 
 ## Paso 4 Probar la integración
 

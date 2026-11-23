@@ -49,9 +49,9 @@ Use un Android y un iPhone físicos con las licencias emitidas para la app:
 
 ## Probar el ejemplo de un botón
 
-Integre [JWTExample.tsx](../examples/JWTExample.tsx) con una función `getSession` que llame a su backend. Compruebe que cada intento solicite la sesión, que no se inicie la SDK si esa solicitud falla y que el botón permanezca bloqueado mientras obtiene los tokens o ejecuta la verificación.
+Configure `sessionEndpoint` en [JWTExample.tsx](../examples/JWTExample.tsx) con la URL HTTPS de su servicio de sesión. Compruebe que cada pulsación envíe un `POST`, que el botón se bloquee durante la solicitud y la verificación, y que la SDK se abra solo después de recibir los dos tokens y el contexto completos.
 
-La dirección de backend mostrada en la [guía JWT](AUTENTICACION_JWT.md) es ilustrativa; debe reemplazarse por la operación autenticada de su app.
+Pruebe una respuesta HTTP de error, una respuesta incompleta y un fallo de conexión. En los tres casos el ejemplo debe presentar el error, mantener cerrada la SDK y permitir un nuevo intento. Mantenga las credenciales de estas pruebas en el entorno del servicio según la [guía JWT](AUTENTICACION_JWT.md#regla-para-las-credenciales-de-prueba).
 
 ## Compatibilidad con la firma anterior
 
