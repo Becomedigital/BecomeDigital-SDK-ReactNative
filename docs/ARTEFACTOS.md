@@ -19,6 +19,8 @@ Use estas versiones junto con las guías nativas de [Android](https://github.com
 
 Las dependencias nativas se obtienen desde Maven Central y SPM. Conserve las versiones exactas, `Package.resolved` y `Podfile.lock`. No enlace simultáneamente las SDK locales anteriores y los paquetes publicados.
 
+Consulte los [pasos para configurar Maven Central y SPM en React Native](INSTALACION_NATIVA.md).
+
 ## Arquitecturas
 
 La distribución Android admite ARMv7 y ARM64. Este demo selecciona `armeabi-v7a` y `arm64-v8a`; no ofrece captura documental para `x86_64`.

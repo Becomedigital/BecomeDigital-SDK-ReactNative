@@ -6,12 +6,14 @@ Integre el producto nativo en el target iOS y registre el bridge que lo expone a
 
 1. Configure iOS **16.0 o posterior** y use Xcode compatible con Swift 6.4.
 2. En **File > Add Package Dependencies**, agregue `https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS.git` con **Exact Version 5.3.2**.
-3. Agregue el producto **BDIdentityVerification** al target de su app. SPM resuelve el binario y sus dependencias.
+3. Agregue el producto **BDIdentityVerification** al target que compila el bridge. SPM resuelve el binario y sus dependencias. Compruebe el producto en **Link Binary With Libraries** y la versión en **Package Dependencies**.
 4. Si migra desde la distribución por archivo, retire el XCFramework local y sus productos enlazados anteriores. Conserve las dependencias que su propia app utiliza directamente. Siga la [instalación nativa](https://github.com/Becomedigital/BecomeDigitalSDKAutoCaptureOCR-iOS/blob/main/INSTALACION.md).
 5. Agregue la licencia `com.become.blinkid.key.txt` emitida para su Bundle ID al target y a **Copy Bundle Resources**.
 6. Declare `NSCameraUsageDescription` en `Info.plist`; agregue ubicación solo si el flujo de su app la requiere.
 
 En este demo, coloque la licencia en `ios/Application/Resources/com.become.blinkid.key.txt`. La fase **Copiar licencia local** la incorpora si existe. El archivo está ignorado por Git y no se incluyen licencias nuevas en el repositorio. Puede compilar sin él, pero el inicio informa `MISSING_LICENSE_FILES`.
+
+Para instalar ambas plataformas en una app React Native existente, consulte la [guía de Maven Central y SPM](../docs/INSTALACION_NATIVA.md).
 
 ## Paso 2 Incorporar y exportar el bridge
 
@@ -20,6 +22,10 @@ Agregue [BecomeModule.swift](BecomeDigitalApp/BecomeModule.swift) y [BecomeModul
 El método `iniciarBecomeSDK` recibe `jwt`, `verificationResultsJwt`, `contractId`, `userId` y la opción `preventScreenCapture`. Crea `BDIVConfig(jwt:...)`, asigna `verificationResultsJwt` y luego presenta la SDK. El ejemplo configura onboarding, DNI, pasaporte y consulta del resultado final.
 
 El bridge exige los dos tokens sin `Bearer` y no permite mezclarlos con credenciales. También conserva la firma anterior con `clientId` y `clientSecret`, deprecada por la SDK, para integraciones existentes. No hay cambio automático entre ambos métodos cuando falla una verificación.
+
+### Adaptar un bridge iOS anterior
+
+Con el paquete SPM `5.3.2`, implemente el delegado con `BDIVResponseSuccess(bdivResult: BDIdentityVerificationResponse)` y `BDIVResponseError(error: String)`. Si su bridge anterior recibía `AnyObject`, cambie la firma y lea `responseStatus` y `message` en la respuesta tipada. Si el resultado de consulta trae `verification?.urlGetData`, el ejemplo lo entrega como `responseURL`. Use el [adaptador Swift](BecomeDigitalApp/BecomeModule.swift) para conservar el manejo de éxito, pendiente y error en la promesa de JavaScript.
 
 ## Paso 3 Compilar y llamar desde JavaScript
 

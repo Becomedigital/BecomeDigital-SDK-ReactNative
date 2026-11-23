@@ -59,6 +59,8 @@ Ambas plataformas exportan `BecomeModule.iniciarBecomeSDK`. El adaptador TypeScr
 
 ## Paso 1 Instalar la SDK en cada proyecto nativo
 
+El demo ya consume la SDK de Android mediante Maven Central y la de iOS mediante Swift Package Manager (SPM). Para reproducir la instalación en otra app React Native, consulte la [guía de Maven Central y SPM](docs/INSTALACION_NATIVA.md), con los bloques de Gradle, los pasos de Xcode y la migración desde archivos locales.
+
 ### Android
 
 El demo consume la distribución publicada desde Maven Central:
@@ -96,10 +98,12 @@ Declare `NSCameraUsageDescription` en `Info.plist`. Siga la [instalación iOS](h
 
 1. Incorpore [BecomeModule.swift](ios/BecomeDigitalApp/BecomeModule.swift) y [BecomeModuleBridge.m](ios/BecomeDigitalApp/BecomeModuleBridge.m) al target. Ambos deben estar en **Compile Sources**.
 2. Conserve `@objc(BecomeModule)` y `RCT_EXTERN_MODULE(BecomeModule, NSObject)`.
-3. Compruebe la importación de `BDIdentityVerification`, la licencia y el permiso de cámara.
+3. Compruebe la importación de `BDIdentityVerification` desde los archivos Swift del target, la licencia y el permiso de cámara. Si viene de un bridge previo a la versión `5.3.2`, revise la [firma tipada del delegado iOS](ios/README_BECOME_IOS.md#adaptar-un-bridge-ios-anterior).
 4. Integre el ciclo de vida descrito en la [guía iOS](ios/README_BECOME_IOS.md) con su `AppDelegate` existente.
 
 Ambos bridges usan onboarding, DNI y pasaporte, y consultan el resultado final. Para exponer otras opciones públicas, actualice ambas implementaciones y el contrato TypeScript. Después de cambiar código o dependencias nativas, vuelva a compilar: recargar Metro no registra un módulo nuevo.
+
+La instalación por Maven Central o SPM conserva el punto de entrada de JavaScript `BecomeModule.iniciarBecomeSDK`. Use el bridge de este repositorio para las versiones nativas indicadas y siga el contrato JWT del paso 3.
 
 ## Paso 3 Llamar al bridge desde React Native
 

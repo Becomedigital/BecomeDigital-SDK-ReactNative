@@ -17,7 +17,7 @@ La aplicación no debe consumir `/auth` con las credenciales de Become Digital. 
 
 ## Ejecutar la muestra del demo
 
-1. Configure las dependencias nativas y la licencia como indica el [README](../README.md).
+1. Configure las dependencias nativas y la licencia según la [guía de Maven Central y SPM](INSTALACION_NATIVA.md).
 2. Obtenga desde su backend un token de creación y otro de consulta.
 3. Abra **JWT (recomendado)** y pegue cada token en su campo, sin `Bearer`.
 4. Ingrese el contrato y pulse **Iniciar Verificación**.
